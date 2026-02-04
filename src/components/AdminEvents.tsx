@@ -469,8 +469,8 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
         </div>
 
         {/* カレンダーグリッド */}
-        <div className={`transition-all duration-300 ${calendarCompact ? 'max-h-[240px]' : 'max-h-[680px]'}`}>
-          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border border-[#E5E7EB]">
+        <div className={`transition-all duration-300 overflow-hidden ${calendarCompact ? 'max-h-[240px]' : 'max-h-[680px]'}`}>
+          <div className="grid grid-cols-7 gap-px bg-[#E5E7EB] border border-[#E5E7EB] overflow-hidden">
             {/* 曜日ヘッダー */}
             {dayNames.map((day, index) => (
               <div key={`day-${index}`} className="bg-[#F9FAFB] p-2 text-center">
@@ -680,9 +680,33 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
                 <label className="text-[#3D3D4E] text-sm font-medium tracking-[-0.1504px] block mb-2">
                   {t.eventImage}
                 </label>
-                <div className="bg-[#F5F1E8] border border-[rgba(61,61,78,0.15)] rounded-[8px] h-[126px] flex items-center justify-center relative overflow-hidden">
+                <div className="bg-[#F5F1E8] border border-[rgba(61,61,78,0.15)] rounded-[8px] h-[126px] flex items-center justify-center relative overflow-hidden group">
                   {newEvent.image ? (
-                    <img src={newEvent.image} alt="Event" className="w-full h-full object-cover" />
+                    <>
+                      <img src={newEvent.image} alt="Event" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <label className="cursor-pointer flex flex-col items-center bg-white/90 hover:bg-white px-4 py-2 rounded-lg transition-colors">
+                          <Upload className="w-4 h-4 text-[#3D3D4E] mb-1" />
+                          <span className="text-[#3D3D4E] text-xs font-medium">{t.upload}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setNewEvent({ ...newEvent, image: '' })}
+                          className="flex flex-col items-center bg-red-500/90 hover:bg-red-500 px-4 py-2 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4 text-white mb-1" />
+                          <span className="text-white text-xs font-medium">
+                            {language === 'ja' ? '削除' : 'Remove'}
+                          </span>
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center">
                       <Upload className="w-4 h-4 text-[#3D3D4E] mb-1" />
@@ -1113,9 +1137,33 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
                 <label className="text-[#3D3D4E] text-sm font-medium tracking-[-0.1504px] block mb-2">
                   {t.eventImage}
                 </label>
-                <div className="bg-[#F5F1E8] border border-[rgba(61,61,78,0.15)] rounded-[8px] h-[126px] flex items-center justify-center relative overflow-hidden">
+                <div className="bg-[#F5F1E8] border border-[rgba(61,61,78,0.15)] rounded-[8px] h-[126px] flex items-center justify-center relative overflow-hidden group">
                   {newEvent.image ? (
-                    <img src={newEvent.image} alt="Event" className="w-full h-full object-cover" />
+                    <>
+                      <img src={newEvent.image} alt="Event" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <label className="cursor-pointer flex flex-col items-center bg-white/90 hover:bg-white px-4 py-2 rounded-lg transition-colors">
+                          <Upload className="w-4 h-4 text-[#3D3D4E] mb-1" />
+                          <span className="text-[#3D3D4E] text-xs font-medium">{t.upload}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setNewEvent({ ...newEvent, image: '' })}
+                          className="flex flex-col items-center bg-red-500/90 hover:bg-red-500 px-4 py-2 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4 text-white mb-1" />
+                          <span className="text-white text-xs font-medium">
+                            {language === 'ja' ? '削除' : 'Remove'}
+                          </span>
+                        </button>
+                      </div>
+                    </>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center">
                       <Upload className="w-4 h-4 text-[#3D3D4E] mb-1" />
