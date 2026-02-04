@@ -1,0 +1,33 @@
+import { useState } from 'react';
+import { Button } from './ui/button';
+import { CheckCircle, Users, Image } from 'lucide-react';
+import { AdminApprovals } from './AdminApprovals';
+import { AdminMembers } from './AdminMembers';
+import { AdminGalleryApprovals } from './AdminGalleryApprovals';
+import type { Language, User } from '../App';
+
+interface AdminMembersManagementProps {
+  language: Language;
+  pendingUsers: User[];
+  approvedMembers: User[];
+  onApproveUser: (userId: string) => void;
+  onRejectUser: (userId: string) => void;
+  onRequestReupload?: (userId: string, reasons?: string[]) => void;
+  onOpenChat?: (userId: string) => void;
+  onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
+}
+
+export function AdminMembersManagement({ language, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail }: AdminMembersManagementProps) {
+  return (
+    <AdminMembers 
+      language={language} 
+      approvedMembers={approvedMembers} 
+      pendingUsers={pendingUsers}
+      onApproveUser={onApproveUser}
+      onRejectUser={onRejectUser}
+      onRequestReupload={onRequestReupload}
+      onOpenChat={onOpenChat}
+      onSendBulkEmail={onSendBulkEmail}
+    />
+  );
+}

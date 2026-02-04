@@ -1,0 +1,519 @@
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Badge } from './ui/badge';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { Globe2, MapPin, Mail, Edit, Phone, Users, Save, X, GraduationCap, IdCard, CreditCard } from 'lucide-react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import trussImage from 'figma:asset/8fbefa8d40d592af0e3f6e45ca9c793cfbb1b1c6.png';
+import { Barcode } from './Barcode';
+import type { Language, User } from '../App';
+
+interface ProfilePageProps {
+  language: Language;
+  user: User;
+  isCompact?: boolean;
+  isProfileComplete: boolean;
+  onClose?: () => void;
+}
+
+const translations = {
+  ja: {
+    title: 'プロフィール',
+    personalInfo: '個人情報',
+    basicInfo: '基本情報',
+    name: '名前',
+    furigana: 'フリガナ',
+    nickname: 'ニックネーム',
+    birthday: '生年月日',
+    languages: '話せる言語',
+    country: '出身国',
+    category: '区分',
+    japanese: '日本人学生・国内学生',
+    regularInternational: '正規留学生',
+    exchange: '交換留学生',
+    phone: '電話番号',
+    organizations: '他の所属団体',
+    academicInfo: '学籍情報',
+    major: '学部学科',
+    studentNumber: '学籍番号',
+    grade: '学年',
+    studentIdPhoto: '学生証写真',
+    editProfile: 'プロフィールを編集',
+    saveProfile: '保存する',
+    cancel: 'キャンセル',
+    email: 'メールアドレス',
+    awaitingApproval: '承認待ち',
+    approvalMessage: '運営による承認後、さらに詳細なプロフィール情報を追加できます。',
+  },
+  en: {
+    title: 'Profile',
+    personalInfo: 'Personal Information',
+    basicInfo: 'Basic Information',
+    name: 'Name',
+    furigana: 'Furigana',
+    nickname: 'Nickname',
+    birthday: 'Birthday',
+    languages: 'Languages',
+    country: 'Country',
+    category: 'Category',
+    japanese: 'Japanese Student',
+    regularInternational: 'Regular International',
+    exchange: 'Exchange Student',
+    phone: 'Phone Number',
+    organizations: 'Other Organizations',
+    academicInfo: 'Academic Information',
+    major: 'Major/Department',
+    studentNumber: 'Student Number',
+    grade: 'Grade',
+    studentIdPhoto: 'Student ID Photo',
+    editProfile: 'Edit Profile',
+    saveProfile: 'Save',
+    cancel: 'Cancel',
+    email: 'Email',
+    awaitingApproval: 'Awaiting Approval',
+    approvalMessage: 'After approval, you can add more detailed profile information.',
+  }
+};
+
+export function ProfilePage({ language, user, isCompact = false, isProfileComplete, onClose }: ProfilePageProps) {
+  const t = translations[language];
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState(user);
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'japanese':
+        return t.japanese;
+      case 'regular-international':
+        return t.regularInternational;
+      case 'exchange':
+        return t.exchange;
+      default:
+        return '';
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'japanese':
+        return 'bg-blue-100 text-blue-800';
+      case 'regular-international':
+        return 'bg-purple-100 text-purple-800';
+      case 'exchange':
+        return 'bg-pink-100 text-pink-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleSave = () => {
+    // TODO: Save to backend
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedUser(user);
+    setIsEditing(false);
+  };
+
+  const isWaitingApproval = user.registrationStep === 'waiting_approval';
+
+  // Compact view for header popover
+  if (isCompact) {
+    return (
+      <div className="space-y-4">
+        {/* Profile Header */}
+        <div className="flex items-center gap-4 p-2">
+          <Avatar className="w-16 h-16 bg-gradient-to-br from-[#3D3D4E] to-[#6B6B7A]">
+            <AvatarFallback className="text-white">
+              {user.name.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <p className="text-[#3D3D4E]">{user.name}</p>
+            {user.nickname && <p className="text-[#6B6B7A] text-sm">{user.nickname}</p>}
+            <Badge className={`${getCategoryColor(user.category)} mt-1`}>
+              {getCategoryLabel(user.category)}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Quick Info */}
+        <div className="space-y-2 pt-2 border-t text-sm px-2">
+          {!isWaitingApproval && user.country && (
+            <div className="flex items-center gap-2 text-[#6B6B7A]">
+              <MapPin className="w-4 h-4" />
+              <span>{user.country}</span>
+            </div>
+          )}
+          {!isWaitingApproval && user.languages && user.languages.length > 0 && (
+            <div className="flex gap-1 flex-wrap">
+              {user.languages.map((lang, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {lang}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Full page view
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h1 className="text-white">{t.title}</h1>
+        <div className="flex items-center gap-2">
+          {!isEditing ? (
+            <Button 
+              className="bg-[#49B1E4] hover:bg-[#3A9FD3]"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {t.editProfile}
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleCancel}
+              >
+                <X className="w-4 h-4 mr-2" />
+                {t.cancel}
+              </Button>
+              <Button 
+                className="bg-[#49B1E4] hover:bg-[#3A9FD3]"
+                onClick={handleSave}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {t.saveProfile}
+              </Button>
+            </div>
+          )}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-white hover:bg-white/10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Profile Header with Background Image and Avatar */}
+      <div className="relative h-[250px] md:h-[400px] rounded-2xl overflow-hidden shadow-lg bg-[#F5F1E8]">
+        {/* Background Image */}
+        <ImageWithFallback
+          src={trussImage}
+          alt="Truss"
+          loading="eager"
+          className="w-full h-full object-contain"
+        />
+        
+        {/* Barcode Overlay - Top Right */}
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 md:p-3">
+          <Barcode 
+            value={user.id || 'TRUSS000'} 
+            width={1.5}
+            height={45}
+            displayValue={false}
+            className="w-24 h-auto md:w-32"
+          />
+        </div>
+      </div>
+
+      {/* Awaiting Approval Message */}
+      {isWaitingApproval && (
+        <Card className="border-[#49B1E4] bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#49B1E4] flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#3D3D4E] mb-1">{t.awaitingApproval}</h3>
+                <p className="text-sm text-gray-600">{t.approvalMessage}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Basic Information (Always visible) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.basicInfo}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Email */}
+            <div>
+              <Label className="text-gray-600 text-sm mb-1">{t.email}</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <p className="text-gray-900">{user.email}</p>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div>
+              <Label className="text-gray-600 text-sm mb-1">{t.name}</Label>
+              {isEditing ? (
+                <Input
+                  value={editedUser.name}
+                  onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
+                  autoComplete="off"
+                />
+              ) : (
+                <p className="text-gray-900 mt-1">{user.name}</p>
+              )}
+            </div>
+
+            {/* Furigana */}
+            <div>
+              <Label className="text-gray-600 text-sm mb-1">{t.furigana}</Label>
+              {isEditing ? (
+                <Input
+                  value={editedUser.furigana}
+                  onChange={(e) => {
+                    // ひらがなをカタカナに自動変換
+                    const katakana = e.target.value.replace(/[\u3041-\u3096]/g, (match) => {
+                      const chr = match.charCodeAt(0) + 0x60;
+                      return String.fromCharCode(chr);
+                    });
+                    setEditedUser({ ...editedUser, furigana: katakana });
+                  }}
+                  autoComplete="off"
+                />
+              ) : (
+                <p className="text-gray-900 mt-1">{user.furigana}</p>
+              )}
+            </div>
+
+            {/* Category */}
+            <div>
+              <Label className="text-gray-600 text-sm mb-1">{t.category}</Label>
+              <div className="mt-1">
+                <Badge className={`${getCategoryColor(user.category)}`}>
+                  {getCategoryLabel(user.category)}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Academic Information (Always visible) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.academicInfo}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Major */}
+            {user.major && (
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.major}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.major}
+                    onChange={(e) => setEditedUser({ ...editedUser, major: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <GraduationCap className="w-4 h-4 text-gray-400" />
+                    <p className="text-gray-900">{user.major}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Student Number */}
+            {user.studentNumber && (
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.studentNumber}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.studentNumber}
+                    onChange={(e) => setEditedUser({ ...editedUser, studentNumber: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <IdCard className="w-4 h-4 text-gray-400" />
+                    <p className="text-gray-900">{user.studentNumber}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Grade */}
+            {user.grade && (
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.grade}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.grade}
+                    onChange={(e) => setEditedUser({ ...editedUser, grade: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <p className="text-gray-900 mt-1">{user.grade}</p>
+                )}
+              </div>
+            )}
+
+            {/* Student ID Photo */}
+            {false && user.studentIdImage && (
+              <div className="md:col-span-2">
+                <Label className="text-gray-600 text-sm mb-2 block">{t.studentIdPhoto}</Label>
+                <div className="border rounded-lg p-2 inline-block bg-gray-50">
+                  <img 
+                    src={user.studentIdImage} 
+                    alt="Student ID" 
+                    className="max-w-xs max-h-48 object-contain"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Extended Personal Information (Only after approval) */}
+      {!isWaitingApproval && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.personalInfo}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Nickname */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.nickname}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.nickname || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, nickname: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <p className="text-gray-900 mt-1">{user.nickname || '-'}</p>
+                )}
+              </div>
+
+              {/* Birthday */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.birthday}</Label>
+                {isEditing ? (
+                  <Input
+                    type="date"
+                    value={editedUser.birthday || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, birthday: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <p className="text-gray-900 mt-1">{user.birthday || '-'}</p>
+                )}
+              </div>
+
+              {/* Country */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.country}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.country || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, country: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <p className="text-gray-900">{user.country || '-'}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Languages */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.languages}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.languages?.join(', ') || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, languages: e.target.value.split(',').map(s => s.trim()) })}
+                    placeholder="e.g., Japanese, English, Chinese"
+                    autoComplete="off"
+                  />
+                ) : (
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {user.languages && user.languages.length > 0 ? (
+                      user.languages.map((lang, index) => (
+                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <Globe2 className="w-3 h-3" />
+                          {lang}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-gray-900">-</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Phone */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.phone}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.phone || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, phone: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  user.phone ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <p className="text-gray-900">{user.phone}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900 mt-1">-</p>
+                  )
+                )}
+              </div>
+
+              {/* Organizations */}
+              <div>
+                <Label className="text-gray-600 text-sm mb-1">{t.organizations}</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedUser.organizations || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, organizations: e.target.value })}
+                    autoComplete="off"
+                  />
+                ) : (
+                  user.organizations ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <p className="text-gray-900">{user.organizations}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900 mt-1">-</p>
+                  )
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

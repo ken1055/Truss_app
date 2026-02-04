@@ -1,0 +1,344 @@
+import { useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Input } from './ui/input';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { Heart, Calendar, Search, Globe2, Plus, Upload, X } from 'lucide-react';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Label } from './ui/label';
+import { toast } from 'sonner';
+import Masonry from 'react-responsive-masonry';
+import type { Language, GalleryPhoto } from '../App';
+import galleryImage1 from 'figma:asset/5bec45231966eb516b1ff876bdd9c01730a2ea71.png';
+import galleryImage2 from 'figma:asset/d597fc6f73c7dcc01c7cca1b364724822218cb54.png';
+import galleryImage3 from 'figma:asset/34d4087d851f43f06c21d5465b0a4d56d285bb92.png';
+import galleryImage4 from 'figma:asset/2d9bf927c62cc06d0020b6f26acd6837c585a02b.png';
+import galleryImage5 from 'figma:asset/15ffc9f80e1e8c69b52479ff82b3869e1fe96e15.png';
+import galleryImage6 from 'figma:asset/5c88bfa752b169cbf87848a61f07459b431f0d47.png';
+
+interface GalleryPageProps {
+  language: Language;
+}
+
+const translations = {
+  ja: {
+    title: 'ギャラリー',
+    allPhotos: 'すべての写真',
+    members: 'メンバー一覧',
+    likes: 'いいね',
+    search: 'メンバーを検索...',
+    japanese: '日本人学生・国内学生',
+    regularInternational: '正規留学生',
+    exchange: '交換留学生',
+    speaks: '話せる言語',
+    from: '出身',
+    addPhoto: '写真を追加',
+    selectEvent: 'イベントを選択',
+    uploadPhoto: '写真をアップロード',
+    selectImage: '画像を選択',
+    cancel: 'キャンセル',
+    add: '追加する',
+    noEventSelected: 'イベントを選択してください',
+  },
+  en: {
+    title: 'Gallery',
+    allPhotos: 'All Photos',
+    members: 'Members',
+    likes: 'Likes',
+    search: 'Search members...',
+    japanese: 'Japanese Student',
+    regularInternational: 'Regular International',
+    exchange: 'Exchange Student',
+    speaks: 'Speaks',
+    from: 'From',
+    addPhoto: 'Add Photo',
+    selectEvent: 'Select Event',
+    uploadPhoto: 'Upload Photo',
+    selectImage: 'Select Image',
+    cancel: 'Cancel',
+    add: 'Add',
+    noEventSelected: 'Please select an event',
+  }
+};
+
+export function GalleryPage({ language }: GalleryPageProps) {
+  const t = translations[language];
+  const [likedPhotos, setLikedPhotos] = useState<Set<number>>(new Set());
+  const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<string>('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // イベントリスト
+  const events = [
+    { id: 1, name: language === 'ja' ? 'お花見パーティー' : 'Cherry Blossom Party', date: '2025-03-28' },
+    { id: 2, name: language === 'ja' ? '国際料理大会' : 'International Cooking Contest', date: '2025-04-15' },
+    { id: 3, name: language === 'ja' ? '言語交換カフェ' : 'Language Exchange Cafe', date: '2025-03-20' },
+    { id: 4, name: language === 'ja' ? '夏祭り' : 'Summer Festival', date: '2024-08-10' },
+  ];
+
+  const photos: GalleryPhoto[] = [
+    {
+      id: 1,
+      eventId: 4,
+      eventName: language === 'ja' ? '夏祭り' : 'Summer Festival',
+      eventDate: '2024-08-10',
+      image: galleryImage1,
+      likes: 24,
+      height: 180,
+      userId: 'user1',
+      userName: language === 'ja' ? '田中花子' : 'Hanako Tanaka',
+      uploadedAt: '2024-08-11T10:00:00Z',
+      approved: true,
+    },
+    {
+      id: 2,
+      eventId: 1,
+      eventName: language === 'ja' ? 'お花見パーティー' : 'Cherry Blossom Party',
+      eventDate: '2025-03-28',
+      image: galleryImage2,
+      likes: 18,
+      height: 240,
+      userId: 'user2',
+      userName: language === 'ja' ? '佐藤太郎' : 'Taro Sato',
+      uploadedAt: '2025-03-29T14:30:00Z',
+      approved: true,
+    },
+    {
+      id: 3,
+      eventId: 2,
+      eventName: language === 'ja' ? '国際料理大会' : 'International Cooking Contest',
+      eventDate: '2025-04-15',
+      image: galleryImage3,
+      likes: 32,
+      height: 200,
+      userId: 'user3',
+      userName: 'Sarah Johnson',
+      uploadedAt: '2025-04-16T18:00:00Z',
+      approved: true,
+    },
+    {
+      id: 4,
+      eventId: 3,
+      eventName: language === 'ja' ? '言語交換カフェ' : 'Language Exchange Cafe',
+      eventDate: '2025-03-20',
+      image: galleryImage4,
+      likes: 15,
+      height: 160,
+      userId: 'user4',
+      userName: 'Kim Min-ho',
+      uploadedAt: '2025-03-21T12:00:00Z',
+      approved: true,
+    },
+    {
+      id: 5,
+      eventId: 4,
+      eventName: language === 'ja' ? '夏祭り' : 'Summer Festival',
+      eventDate: '2024-08-10',
+      image: galleryImage5,
+      likes: 28,
+      height: 220,
+      userId: 'user5',
+      userName: language === 'ja' ? '鈴木一郎' : 'Ichiro Suzuki',
+      uploadedAt: '2024-08-11T16:45:00Z',
+      approved: true,
+    },
+    {
+      id: 6,
+      eventId: 1,
+      eventName: language === 'ja' ? 'お花見パーティー' : 'Cherry Blossom Party',
+      eventDate: '2025-03-28',
+      image: galleryImage6,
+      likes: 21,
+      height: 190,
+      userId: 'user6',
+      userName: language === 'ja' ? '山田美咲' : 'Misaki Yamada',
+      uploadedAt: '2025-03-29T11:20:00Z',
+      approved: true,
+    },
+  ];
+
+  const toggleLike = (photoId: number) => {
+    setLikedPhotos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(photoId)) {
+        newSet.delete(photoId);
+      } else {
+        newSet.add(photoId);
+      }
+      return newSet;
+    });
+  };
+
+  const handlePhotoUpload = () => {
+    if (!selectedEvent || selectedFiles.length === 0) return;
+
+    const selectedEventData = events.find(e => e.name === selectedEvent);
+    if (!selectedEventData) return;
+
+    // 承認待ち写真をlocalStorageに保存
+    const pendingPhotos = JSON.parse(localStorage.getItem('pendingPhotos') || '[]');
+    const nextId = Math.max(...pendingPhotos.map((p: GalleryPhoto) => p.id), 0) + 1;
+
+    selectedFiles.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newPhoto: GalleryPhoto = {
+          id: nextId + index,
+          eventId: selectedEventData.id,
+          eventName: selectedEventData.name,
+          eventDate: selectedEventData.date,
+          image: reader.result as string,
+          likes: 0,
+          height: 200,
+          userId: 'current-user-id', // 実際のアプリではログインユーザーのIDを使用
+          userName: language === 'ja' ? '山田太郎' : 'Taro Yamada',
+          uploadedAt: new Date().toISOString(),
+          approved: false,
+        };
+
+        pendingPhotos.push(newPhoto);
+        localStorage.setItem('pendingPhotos', JSON.stringify(pendingPhotos));
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setIsAddPhotoOpen(false);
+    setSelectedEvent('');
+    setSelectedFiles([]);
+    setPreviewUrls([]);
+    toast.success(language === 'ja' ? '写真をアップロードしました。運営の承認をお待ちください。' : 'Photos uploaded. Waiting for admin approval.');
+  };
+
+  return (
+    <div className="space-y-4 relative">
+      <Masonry columnsCount={window.innerWidth < 768 ? 2 : window.innerWidth < 1024 ? 3 : 4} gutter="16px">
+        {photos.map((photo) => {
+          const isLiked = likedPhotos.has(photo.id);
+          return (
+            <div key={photo.id} className="w-full overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer break-inside-avoid rounded-lg">
+              <div className="relative w-full" style={{ height: `${photo.height}px` }}>
+                <img 
+                  src={photo.image} 
+                  alt={photo.eventName}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                    <p className="text-sm truncate">{photo.eventName}</p>
+                    <div className="flex items-center gap-1 text-xs mt-1">
+                      <Calendar className="w-3 h-3" />
+                      {photo.eventDate}
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleLike(photo.id);
+                  }}
+                  className="absolute bottom-2 right-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm text-pink-600 hover:text-pink-700 transition-colors rounded-full px-2 py-1 shadow-lg"
+                >
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <span className="text-sm">{photo.likes + (isLiked ? 1 : 0)}</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </Masonry>
+
+      {/* Floating Add Button */}
+      <button
+        onClick={() => setIsAddPhotoOpen(true)}
+        className="fixed right-6 bottom-24 bg-[#49B1E4] hover:bg-[#3A9FD3] text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all z-40"
+        aria-label={t.addPhoto}
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      {/* 写真追加ダイアログ */}
+      <Dialog open={isAddPhotoOpen} onOpenChange={setIsAddPhotoOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t.addPhoto}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select
+              value={selectedEvent}
+              onValueChange={setSelectedEvent}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t.selectEvent} />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map(event => (
+                  <SelectItem key={event.id} value={event.name}>
+                    {event.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <Upload className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) {
+                    setSelectedFiles(Array.from(files));
+                    setPreviewUrls(Array.from(files).map(file => URL.createObjectURL(file)));
+                  }
+                }}
+                className="pl-10"
+              />
+            </div>
+            {previewUrls.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square">
+                    <img
+                      src={url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                        <p className="text-sm truncate">{selectedEvent}</p>
+                        <div className="flex items-center gap-1 text-xs mt-1">
+                          <Calendar className="w-3 h-3" />
+                          {events.find(event => event.name === selectedEvent)?.date}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddPhotoOpen(false)}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              type="button"
+              disabled={!selectedEvent || selectedFiles.length === 0}
+              onClick={handlePhotoUpload}
+            >
+              {t.add}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
