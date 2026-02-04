@@ -44,25 +44,36 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
   const t = translations[language];
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
 
-  // イベントを5回複製して無限ループを実現（より滑らかに）
+  // イベントを多数複製して無限ループを実現
   const duplicatedEvents = [...events, ...events, ...events, ...events, ...events];
 
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: -scrollContainerRef.current.offsetWidth * 0.8,
-        behavior: 'smooth'
-      });
+  // 自動スクロール開始
+  const startAutoScroll = () => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
     }
+    
+    autoScrollIntervalRef.current = setInterval(() => {
+      if (!scrollContainerRef.current || isDraggingRef.current) return;
+      
+      const container = scrollContainerRef.current;
+      container.scrollBy({
+        left: 1,
+        behavior: 'auto'
+      });
+    }, 20); // スムーズな自動スクロール
   };
 
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: scrollContainerRef.current.offsetWidth * 0.8,
-        behavior: 'smooth'
-      });
+  // 自動スクロール停止
+  const stopAutoScroll = () => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
     }
   };
 
@@ -71,7 +82,7 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
     if (scrollContainerRef.current && events.length > 0) {
       const container = scrollContainerRef.current;
       const singleSetWidth = (container.scrollWidth / 5);
-      // 3番目のセット（中央）から開始
+      // 中央のセット（3番目）から開始
       container.scrollTo({
         left: singleSetWidth * 2,
         behavior: 'auto'
@@ -79,7 +90,7 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
     }
   }, [events.length]);
 
-  // スクロール位置を監視して無限ループを実現
+  // 無限ループ処理
   useEffect(() => {
     const handleScroll = () => {
       if (!scrollContainerRef.current || isScrollingRef.current) return;
@@ -88,27 +99,27 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
       const singleSetWidth = container.scrollWidth / 5;
       const scrollLeft = container.scrollLeft;
       
-      // 右端に近づいたら（4番目のセットの中盤）中央（2番目のセット）にリセット
-      if (scrollLeft >= singleSetWidth * 3.5) {
+      // 右端に近づいたら左側にリセット
+      if (scrollLeft >= singleSetWidth * 4) {
         isScrollingRef.current = true;
         container.scrollTo({
-          left: singleSetWidth * 1.5,
+          left: singleSetWidth * 2,
           behavior: 'auto'
         });
         setTimeout(() => {
           isScrollingRef.current = false;
-        }, 100);
+        }, 10);
       }
-      // 左端に近づいたら（1番目のセットの中盤）中央（3番目のセット）にリセット
-      else if (scrollLeft <= singleSetWidth * 0.5) {
+      // 左端に近づいたら右側にリセット
+      else if (scrollLeft <= singleSetWidth * 1) {
         isScrollingRef.current = true;
         container.scrollTo({
-          left: singleSetWidth * 2.5,
+          left: singleSetWidth * 3,
           behavior: 'auto'
         });
         setTimeout(() => {
           isScrollingRef.current = false;
-        }, 100);
+        }, 10);
       }
     };
 
@@ -119,20 +130,65 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
     }
   }, [events.length]);
 
-  // Auto-scroll effect with infinite loop
-  useEffect(() => {
-    const autoScrollInterval = setInterval(() => {
-      if (scrollContainerRef.current && !isScrollingRef.current) {
-        const container = scrollContainerRef.current;
-        // 常に右にスクロール（無限ループはscrollイベントで処理）
-        container.scrollBy({
-          left: container.offsetWidth * 0.8,
-          behavior: 'smooth'
-        });
-      }
-    }, 3000); // Auto-scroll every 3 seconds
+  // マウス/タッチイベントハンドラー
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    isDraggingRef.current = true;
+    startXRef.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+    stopAutoScroll();
+  };
 
-    return () => clearInterval(autoScrollInterval);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isDraggingRef.current = false;
+    setTimeout(() => {
+      startAutoScroll();
+    }, 2000); // 2秒後に自動スクロール再開
+  };
+
+  const handleMouseLeave = () => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setTimeout(() => {
+        startAutoScroll();
+      }, 2000);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!scrollContainerRef.current) return;
+    isDraggingRef.current = true;
+    startXRef.current = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+    stopAutoScroll();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current || !scrollContainerRef.current) return;
+    const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleTouchEnd = () => {
+    isDraggingRef.current = false;
+    setTimeout(() => {
+      startAutoScroll();
+    }, 2000);
+  };
+
+  // 自動スクロール開始
+  useEffect(() => {
+    startAutoScroll();
+    return () => stopAutoScroll();
   }, []);
 
   return (
@@ -158,28 +214,21 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
 
       {/* Event Images - Bottom Section */}
       <section className="flex-shrink-0">
-        <div className="flex justify-between items-center mb-3">
+        <div className="mb-3">
           <h3 className="text-[#3D3D4E] text-sm">{language === 'ja' ? 'イベント情報' : 'Event Information'}</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={scrollLeft}
-              className="bg-white border border-[#E8E4DB] hover:bg-[#E8E4DB] rounded-full p-1.5 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4 text-[#3D3D4E]" />
-            </button>
-            <button
-              onClick={scrollRight}
-              className="bg-white border border-[#E8E4DB] hover:bg-[#E8E4DB] rounded-full p-1.5 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4 text-[#3D3D4E]" />
-            </button>
-          </div>
         </div>
 
         <div 
           ref={scrollContainerRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-3 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing select-none"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {duplicatedEvents.map((event, index) => {
             const displayTitle = language === 'ja' ? event.title : (event.titleEn || event.title);
