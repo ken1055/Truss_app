@@ -1,6 +1,6 @@
-@custom-variant dark (&:is(.dark *));
-
 @import url('https://fonts.googleapis.com/css2?family=Island+Moments&display=swap');
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
   --font-size: 16px;
