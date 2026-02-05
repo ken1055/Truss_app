@@ -34,7 +34,7 @@ export interface User {
   furigana: string;
   birthday: string;
   languages: string[];
-  country: string;
+  birthCountry: string; // 生まれた国
   category: 'japanese' | 'regular-international' | 'exchange';
   approved: boolean;
   isAdmin?: boolean;
@@ -182,6 +182,15 @@ function App() {
       const stored = localStorage.getItem('truss_currentUser');
       if (stored) {
         const parsed = JSON.parse(stored);
+        
+        // 別キーに保存された画像データがあれば復元
+        if (parsed.id) {
+          const studentIdImage = localStorage.getItem(`truss_studentId_${parsed.id}`);
+          if (studentIdImage) {
+            parsed.studentIdImage = studentIdImage;
+          }
+        }
+        
         return parsed;
       }
     } catch (error) {
@@ -215,7 +224,7 @@ function App() {
         furigana: 'ヤマダタロウ',
         birthday: '2003-05-20',
         languages: ['日本語'],
-        country: 'Japan',
+        birthCountry: 'Japan', // 生まれた国を追加
         category: 'japanese',
         approved: false,
         registrationStep: 'pending_approval' as RegistrationStep,
@@ -237,7 +246,7 @@ function App() {
         furigana: 'エミリーチェン',
         birthday: '2002-11-12',
         languages: ['English', 'Mandarin'],
-        country: 'Singapore',
+        birthCountry: 'Singapore', // 生まれた国を追加
         category: 'exchange',
         approved: false,
         registrationStep: 'pending_approval' as RegistrationStep,
@@ -293,11 +302,11 @@ function App() {
         id: 'user-001',
         email: 'hanako.tanaka@example.ac.jp',
         name: '田中花子',
-        nickname: 'は��こ',
+        nickname: 'はこ',
         furigana: 'タナカハナコ',
         birthday: '2003-04-15',
         languages: ['日本語', 'English'],
-        country: 'Japan',
+        birthCountry: 'Japan', // 生まれた国を追加
         category: 'japanese',
         approved: true,
         registrationStep: 'fully_active',
@@ -317,7 +326,7 @@ function App() {
         furigana: 'ジョンスミス',
         birthday: '2002-08-22',
         languages: ['English', '日本語'],
-        country: 'USA',
+        birthCountry: 'USA', // 生まれた国を追加
         category: 'regular-international',
         approved: true,
         registrationStep: 'fully_active',
@@ -337,7 +346,7 @@ function App() {
         furigana: 'サトウタロウ',
         birthday: '2004-02-10',
         languages: ['日本語'],
-        country: 'Japan',
+        birthCountry: 'Japan', // 生まれた国を追加
         category: 'japanese',
         approved: true,
         registrationStep: 'fully_active',
@@ -755,16 +764,29 @@ function App() {
     }
   }, [pendingUsers]);
 
-  // userが変更されたらlocalStorageに保存
+  // userが変更されたらlocalStorageに保存（画像データを除外してサイズを削減）
   useEffect(() => {
     try {
       if (user) {
-        localStorage.setItem('truss_currentUser', JSON.stringify(user));
+        // studentIdImageを除外してlocalStorageに保存
+        const { studentIdImage, ...userWithoutImage } = user;
+        localStorage.setItem('truss_currentUser', JSON.stringify(userWithoutImage));
+        
+        // 画像データは別のキーで保存（オプショナル）
+        if (studentIdImage) {
+          try {
+            localStorage.setItem(`truss_studentId_${user.id}`, studentIdImage);
+          } catch (imgError) {
+            // 画像が大きすぎる場合はスキップ
+            console.warn('Student ID image too large for localStorage, skipping image save');
+          }
+        }
       } else {
         localStorage.removeItem('truss_currentUser');
       }
     } catch (error) {
       console.error('Error saving currentUser to localStorage:', error);
+      // エラーが発生した場合でもアプリは継続動作
     }
   }, [user]);
 
@@ -957,7 +979,7 @@ function App() {
         furigana: 'ウンエイカンリシャ',
         birthday: '1990-01-01',
         languages: ['日本語', 'English'],
-        country: 'Japan',
+        birthCountry: 'Japan', // 生まれた国を追加
         category: 'japanese',
         approved: true,
         isAdmin: true,
@@ -1106,7 +1128,7 @@ function App() {
       furigana: data.furigana,
       birthday: '',
       languages: [],
-      country: '',
+      birthCountry: '', // 生まれた国を追加
       category: data.category, // フォームから取得したカテゴリを使用
       approved: false, // 承認待ち
       studentIdImage: data.studentIdImage,

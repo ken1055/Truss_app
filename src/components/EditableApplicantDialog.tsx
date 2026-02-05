@@ -318,6 +318,8 @@ export function EditableApplicantDialog({ language, application, onApprove, onRe
         onOpenChange={setShowApproveConfirm}
         title={t.confirmApprove}
         description={t.confirmApproveMessage}
+        confirmText={t.approve}
+        cancelText={t.cancel}
         onConfirm={handleConfirmApprove}
         onCancel={() => setShowApproveConfirm(false)}
       />
@@ -326,6 +328,8 @@ export function EditableApplicantDialog({ language, application, onApprove, onRe
         onOpenChange={setShowRejectConfirm}
         title={t.confirmReject}
         description={t.confirmRejectMessage}
+        confirmText={t.reject}
+        cancelText={t.cancel}
         onConfirm={handleConfirmReject}
         onCancel={() => setShowRejectConfirm(false)}
         variant="destructive"

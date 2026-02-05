@@ -5,21 +5,23 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  onCancel?: () => void;
   title: string;
   description: string;
-  confirmText: string;
-  cancelText: string;
+  confirmText?: string;
+  cancelText?: string;
   variant?: 'default' | 'destructive';
 }
 
 export function ConfirmDialog({ 
   open, 
   onOpenChange, 
-  onConfirm, 
+  onConfirm,
+  onCancel,
   title, 
   description, 
-  confirmText, 
-  cancelText,
+  confirmText = 'OK',
+  cancelText = 'Cancel',
   variant = 'default'
 }: ConfirmDialogProps) {
   const handleConfirm = () => {
@@ -36,9 +38,9 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button 
-            variant={variant}
+            variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={handleConfirm}
-            className="flex-1 sm:flex-none bg-[#49B1E4] hover:bg-[#3A9BD4] text-white"
+            className={variant === 'destructive' ? 'flex-1 sm:flex-none' : 'flex-1 sm:flex-none bg-[#49B1E4] hover:bg-[#3A9BD4] text-white'}
           >
             {confirmText}
           </Button>

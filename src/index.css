@@ -1454,6 +1454,10 @@
     cursor: default;
   }
 
+  .cursor-grab {
+    cursor: grab;
+  }
+
   .cursor-not-allowed {
     cursor: not-allowed;
   }
@@ -1672,10 +1676,6 @@
 
   .overflow-y-scroll {
     overflow-y: scroll;
-  }
-
-  .scroll-smooth {
-    scroll-behavior: smooth;
   }
 
   .rounded {
@@ -2055,6 +2055,16 @@
     background-color: var(--color-red-500);
   }
 
+  .bg-red-500\/90 {
+    background-color: color-mix(in srgb, oklch(.637 .237 25.331) 90%, transparent);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-red-500\/90 {
+      background-color: color-mix(in oklab, var(--color-red-500) 90%, transparent);
+    }
+  }
+
   .bg-secondary {
     background-color: var(--secondary);
   }
@@ -2384,10 +2394,6 @@
 
   .p-1 {
     padding: calc(var(--spacing) * 1);
-  }
-
-  .p-1\.5 {
-    padding: calc(var(--spacing) * 1.5);
   }
 
   .p-2 {
@@ -3378,6 +3384,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-red-500:hover {
+      background-color: var(--color-red-500);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-secondary\/80:hover {
       background-color: var(--secondary);
     }
@@ -3386,6 +3398,12 @@
       .hover\:bg-secondary\/80:hover {
         background-color: color-mix(in oklab, var(--secondary) 80%, transparent);
       }
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-white:hover {
+      background-color: var(--color-white);
     }
   }
 
@@ -3591,6 +3609,10 @@
   .focus-visible\:outline-1:focus-visible {
     outline-style: var(--tw-outline-style);
     outline-width: 1px;
+  }
+
+  .active\:cursor-grabbing:active {
+    cursor: grabbing;
   }
 
   .disabled\:pointer-events-none:disabled {

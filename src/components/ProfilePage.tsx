@@ -29,7 +29,7 @@ const translations = {
     nickname: 'ニックネーム',
     birthday: '生年月日',
     languages: '話せる言語',
-    country: '出身国',
+    birthCountry: '生まれた国',
     category: '区分',
     japanese: '日本人学生・国内学生',
     regularInternational: '正規留学生',
@@ -57,7 +57,7 @@ const translations = {
     nickname: 'Nickname',
     birthday: 'Birthday',
     languages: 'Languages',
-    country: 'Country',
+    birthCountry: 'Birth Country',
     category: 'Category',
     japanese: 'Japanese Student',
     regularInternational: 'Regular International',
@@ -143,10 +143,10 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
 
         {/* Quick Info */}
         <div className="space-y-2 pt-2 border-t text-sm px-2">
-          {!isWaitingApproval && user.country && (
+          {!isWaitingApproval && user.birthCountry && (
             <div className="flex items-center gap-2 text-[#6B6B7A]">
               <MapPin className="w-4 h-4" />
-              <span>{user.country}</span>
+              <span>{user.birthCountry}</span>
             </div>
           )}
           {!isWaitingApproval && user.languages && user.languages.length > 0 && (
@@ -426,19 +426,19 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
                 )}
               </div>
 
-              {/* Country */}
+              {/* Birth Country */}
               <div>
-                <Label className="text-gray-600 text-sm mb-1">{t.country}</Label>
+                <Label className="text-gray-600 text-sm mb-1">{t.birthCountry}</Label>
                 {isEditing ? (
                   <Input
-                    value={editedUser.country || ''}
-                    onChange={(e) => setEditedUser({ ...editedUser, country: e.target.value })}
+                    value={editedUser.birthCountry || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, birthCountry: e.target.value })}
                     autoComplete="off"
                   />
                 ) : (
                   <div className="flex items-center gap-2 mt-1">
                     <MapPin className="w-4 h-4 text-gray-400" />
-                    <p className="text-gray-900">{user.country || '-'}</p>
+                    <p className="text-gray-900">{user.birthCountry || '-'}</p>
                   </div>
                 )}
               </div>

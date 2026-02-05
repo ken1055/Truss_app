@@ -22,7 +22,7 @@ const translations = {
     nickname: 'ニックネーム',
     id: 'ID',
     email: 'メールアドレス',
-    birthDate: '生年月日',
+    phone: '電話番号',
     studentNumber: '学生番号',
     major: '学部学科',
     category: '区分',
@@ -44,7 +44,7 @@ const translations = {
     nickname: 'Nickname',
     id: 'ID',
     email: 'Email',
-    birthDate: 'Birth Date',
+    phone: 'Phone Number',
     studentNumber: 'Student Number',
     major: 'Major',
     category: 'Category',
@@ -173,10 +173,10 @@ export function MemberDetailModal({
               <p className="text-[#101828] text-base tracking-[-0.3125px] break-all">{user.email}</p>
             </div>
 
-            {/* 生年月日 */}
+            {/* 電話番号 */}
             <div>
-              <p className="text-[#4A5565] text-sm tracking-[-0.1504px] mb-1">{t.birthDate}</p>
-              <p className="text-[#101828] text-base tracking-[-0.3125px]">{user.birthDate || '-'}</p>
+              <p className="text-[#4A5565] text-sm tracking-[-0.1504px] mb-1">{t.phone}</p>
+              <p className="text-[#101828] text-base tracking-[-0.3125px] break-all">{user.phone || '-'}</p>
             </div>
 
             {/* 学生番号 */}
