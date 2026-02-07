@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch app user from database
   const fetchAppUser = async (authId: string): Promise<AppUser | null> => {
+    console.log('🔍 fetchAppUser called with authId:', authId);
+    
     try {
       const { data, error } = await supabase
         .from('users')
@@ -44,12 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('auth_id', authId)
         .single();
 
+      console.log('📊 Supabase query result:', { data, error });
+
       if (error) {
-        console.error('Error fetching user:', error);
+        console.error('❌ Error fetching user:', error);
         return null;
       }
 
-      if (!data) return null;
+      if (!data) {
+        console.log('⚠️ No user data found');
+        return null;
+      }
+      
+      console.log('✅ User found:', data.email);
 
       // Convert DB user to App user
       return {
@@ -89,20 +98,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
+      console.log('🚀 initAuth starting...');
+      
       try {
         // Get current session
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('📋 Session:', session ? `Found (${session.user?.email})` : 'None');
+        
         setSession(session);
         setSupabaseUser(session?.user || null);
 
         if (session?.user) {
+          console.log('👤 User ID from session:', session.user.id);
           const appUser = await fetchAppUser(session.user.id);
+          console.log('📦 App user result:', appUser ? `Found (${appUser.email})` : 'null');
           setUser(appUser);
+        } else {
+          console.log('⚠️ No session user');
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('❌ Error initializing auth:', error);
       } finally {
         setLoading(false);
+        console.log('✅ initAuth complete');
       }
     };
 
