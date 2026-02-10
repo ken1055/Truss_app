@@ -18,6 +18,7 @@ interface AdminChatProps {
   language: Language;
   messageThreads: MessageThread;
   onUpdateMessageThreads: (threads: MessageThread) => void;
+  onSendMessage?: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
   approvedMembers?: UserType[];
   pendingUsers?: UserType[];
   chatThreadMetadata: ChatThreadMetadata;
@@ -108,7 +109,7 @@ const translations = {
   }
 };
 
-export function AdminChat({ language, messageThreads, onUpdateMessageThreads, approvedMembers, pendingUsers, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat }: AdminChatProps) {
+export function AdminChat({ language, messageThreads, onUpdateMessageThreads, onSendMessage, approvedMembers, pendingUsers, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat }: AdminChatProps) {
   const t = translations[language];
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [year, setYear] = useState('2026');
@@ -400,6 +401,7 @@ export function AdminChat({ language, messageThreads, onUpdateMessageThreads, ap
           language={language}
           messageThreads={messageThreads}
           onUpdateMessageThreads={onUpdateMessageThreads}
+          onSendMessage={onSendMessage}
           approvedMembers={approvedMembers}
           pendingUsers={pendingUsers}
           chatThreadMetadata={chatThreadMetadata}

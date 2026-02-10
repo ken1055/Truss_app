@@ -749,6 +749,7 @@ function App() {
           onDismissReuploadNotification={handleDismissReuploadNotification}
           messageThreads={messageThreads}
           onUpdateMessageThreads={setMessageThreads}
+          onSendMessage={sendMessage}
           chatThreadMetadata={chatThreadMetadata}
           onUpdateChatThreadMetadata={setChatThreadMetadata}
           notifications={notifications}
@@ -775,6 +776,7 @@ function App() {
           onRequestReupload={handleRequestReupload}
           messageThreads={messageThreads}
           onUpdateMessageThreads={setMessageThreads}
+          onSendMessage={sendMessage}
           chatThreadMetadata={chatThreadMetadata}
           onUpdateChatThreadMetadata={setChatThreadMetadata}
           selectedChatUserId={selectedChatUserId}

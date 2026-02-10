@@ -35,6 +35,7 @@ interface DashboardProps {
   onDismissReuploadNotification?: () => void;
   messageThreads: MessageThread;
   onUpdateMessageThreads: (threads: MessageThread) => void;
+  onSendMessage?: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
   chatThreadMetadata: ChatThreadMetadata;
   onUpdateChatThreadMetadata: (metadata: ChatThreadMetadata) => void;
   notifications: Notification[];

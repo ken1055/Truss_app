@@ -11,6 +11,7 @@ interface AdminChatMessagesProps {
   language: Language;
   messageThreads: MessageThread;
   onUpdateMessageThreads: (threads: MessageThread) => void;
+  onSendMessage?: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
   approvedMembers?: UserType[];
   pendingUsers?: UserType[];
   chatThreadMetadata: ChatThreadMetadata;
@@ -42,7 +43,7 @@ const translations = {
   }
 };
 
-export function AdminChatMessages({ language, messageThreads, onUpdateMessageThreads, approvedMembers = [], pendingUsers = [], chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat }: AdminChatMessagesProps) {
+export function AdminChatMessages({ language, messageThreads, onUpdateMessageThreads, onSendMessage, approvedMembers = [], pendingUsers = [], chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat }: AdminChatMessagesProps) {
   const t = translations[language];
   const [selectedUserId, setSelectedUserId] = useState<string | null>(selectedChatUserId || null);
   const [newMessage, setNewMessage] = useState('');
@@ -171,38 +172,44 @@ export function AdminChatMessages({ language, messageThreads, onUpdateMessageThr
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedUserId) return;
 
-    const message: Message = {
-      id: Date.now(),
-      senderId: 'admin-001',
-      senderName: language === 'ja' ? '運営管理者' : 'Admin',
-      text: newMessage,
-      time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
-      isAdmin: true,
-      read: false, // ユーザーがまだ読んでいない
-    };
+    // Save to Supabase if onSendMessage is provided
+    if (onSendMessage) {
+      console.log('Sending message to Supabase...');
+      await onSendMessage(selectedUserId, newMessage, true);
+    } else {
+      // Fallback to local state update (for demo mode)
+      const message: Message = {
+        id: Date.now(),
+        senderId: 'admin-001',
+        senderName: language === 'ja' ? '運営管理者' : 'Admin',
+        text: newMessage,
+        time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        isAdmin: true,
+        read: false,
+      };
 
-    const updatedThreads = {
-      ...messageThreads,
-      [selectedUserId]: [...(messageThreads[selectedUserId] || []), message],
-    };
+      const updatedThreads = {
+        ...messageThreads,
+        [selectedUserId]: [...(messageThreads[selectedUserId] || []), message],
+      };
 
-    console.log('Sending message:', message);
-    console.log('Updated threads:', updatedThreads);
-    onUpdateMessageThreads(updatedThreads);
-    
-    // メタデータを更新（最終メッセージ時刻などを記録）
-    const currentMetadata = chatThreadMetadata[selectedUserId] || {};
-    const updatedMetadata = {
-      ...chatThreadMetadata,
-      [selectedUserId]: {
-        ...currentMetadata,
-        lastMessageTime: message.time,
-      },
-    };
-    onUpdateChatThreadMetadata(updatedMetadata);
+      console.log('Sending message (local):', message);
+      onUpdateMessageThreads(updatedThreads);
+      
+      // メタデータを更新
+      const currentMetadata = chatThreadMetadata[selectedUserId] || {};
+      const updatedMetadata = {
+        ...chatThreadMetadata,
+        [selectedUserId]: {
+          ...currentMetadata,
+          lastMessageTime: message.time,
+        },
+      };
+      onUpdateChatThreadMetadata(updatedMetadata);
+    }
     
     setNewMessage('');
   };

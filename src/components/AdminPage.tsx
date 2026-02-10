@@ -27,6 +27,7 @@ interface AdminPageProps {
   onRequestReupload: (userId: string, reasons?: string[]) => void;
   messageThreads: MessageThread;
   onUpdateMessageThreads: (threads: MessageThread) => void;
+  onSendMessage?: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
   chatThreadMetadata: ChatThreadMetadata;
   onUpdateChatThreadMetadata: (metadata: ChatThreadMetadata) => void;
   selectedChatUserId: string | null;
@@ -62,7 +63,7 @@ const translations = {
   }
 };
 
-export function AdminPage({ user, onLogout, language, onLanguageChange, events, eventParticipants, onCreateEvent, onUpdateEvent, onDeleteEvent, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, messageThreads, onUpdateMessageThreads, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat, onUpdateNotifications, boardPosts, onUpdateBoardPosts, onSendBulkEmail }: AdminPageProps) {
+export function AdminPage({ user, onLogout, language, onLanguageChange, events, eventParticipants, onCreateEvent, onUpdateEvent, onDeleteEvent, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, messageThreads, onUpdateMessageThreads, onSendMessage, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat, onUpdateNotifications, boardPosts, onUpdateBoardPosts, onSendBulkEmail }: AdminPageProps) {
   const t = translations[language];
   const [currentTab, setCurrentTab] = useState<AdminTab>('members');
 
@@ -177,7 +178,7 @@ export function AdminPage({ user, onLogout, language, onLanguageChange, events, 
           {currentTab === 'events' && <AdminEvents language={language} events={events} eventParticipants={eventParticipants} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onDeleteEvent={onDeleteEvent} onSendBulkEmail={onSendBulkEmail} />}
           {currentTab === 'gallery' && <AdminGallery language={language} />}
           {currentTab === 'boards' && <AdminBoards language={language} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} />}
-          {currentTab === 'chat' && <AdminChat language={language} messageThreads={messageThreads} onUpdateMessageThreads={onUpdateMessageThreads} approvedMembers={approvedMembers} pendingUsers={pendingUsers} chatThreadMetadata={chatThreadMetadata} onUpdateChatThreadMetadata={onUpdateChatThreadMetadata} selectedChatUserId={selectedChatUserId} onOpenMemberChat={onOpenMemberChat} />}
+          {currentTab === 'chat' && <AdminChat language={language} messageThreads={messageThreads} onUpdateMessageThreads={onUpdateMessageThreads} onSendMessage={onSendMessage} approvedMembers={approvedMembers} pendingUsers={pendingUsers} chatThreadMetadata={chatThreadMetadata} onUpdateChatThreadMetadata={onUpdateChatThreadMetadata} selectedChatUserId={selectedChatUserId} onOpenMemberChat={onOpenMemberChat} />}
         </main>
       </div>
 
