@@ -35,6 +35,7 @@ interface AdminPageProps {
   onUpdateNotifications: (notifications: Notification[]) => void;
   boardPosts: BoardPost[];
   onUpdateBoardPosts: (posts: BoardPost[]) => void;
+  onDeleteBoardPost?: (postId: number) => Promise<void>;
   onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
 }
 
@@ -63,7 +64,7 @@ const translations = {
   }
 };
 
-export function AdminPage({ user, onLogout, language, onLanguageChange, events, eventParticipants, onCreateEvent, onUpdateEvent, onDeleteEvent, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, messageThreads, onUpdateMessageThreads, onSendMessage, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat, onUpdateNotifications, boardPosts, onUpdateBoardPosts, onSendBulkEmail }: AdminPageProps) {
+export function AdminPage({ user, onLogout, language, onLanguageChange, events, eventParticipants, onCreateEvent, onUpdateEvent, onDeleteEvent, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, messageThreads, onUpdateMessageThreads, onSendMessage, chatThreadMetadata, onUpdateChatThreadMetadata, selectedChatUserId, onOpenMemberChat, onUpdateNotifications, boardPosts, onUpdateBoardPosts, onDeleteBoardPost, onSendBulkEmail }: AdminPageProps) {
   const t = translations[language];
   const [currentTab, setCurrentTab] = useState<AdminTab>('members');
 
@@ -177,7 +178,7 @@ export function AdminPage({ user, onLogout, language, onLanguageChange, events, 
           {currentTab === 'members' && <AdminMembersManagement language={language} pendingUsers={pendingUsers} approvedMembers={approvedMembers} onApproveUser={onApproveUser} onRejectUser={onRejectUser} onRequestReupload={onRequestReupload} onOpenChat={onOpenMemberChat} onSendBulkEmail={onSendBulkEmail} />}
           {currentTab === 'events' && <AdminEvents language={language} events={events} eventParticipants={eventParticipants} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onDeleteEvent={onDeleteEvent} onSendBulkEmail={onSendBulkEmail} />}
           {currentTab === 'gallery' && <AdminGallery language={language} />}
-          {currentTab === 'boards' && <AdminBoards language={language} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} />}
+          {currentTab === 'boards' && <AdminBoards language={language} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} onDeleteBoardPost={onDeleteBoardPost} />}
           {currentTab === 'chat' && <AdminChat language={language} messageThreads={messageThreads} onUpdateMessageThreads={onUpdateMessageThreads} onSendMessage={onSendMessage} approvedMembers={approvedMembers} pendingUsers={pendingUsers} chatThreadMetadata={chatThreadMetadata} onUpdateChatThreadMetadata={onUpdateChatThreadMetadata} selectedChatUserId={selectedChatUserId} onOpenMemberChat={onOpenMemberChat} />}
         </main>
       </div>

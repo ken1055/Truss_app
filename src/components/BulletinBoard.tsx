@@ -17,6 +17,9 @@ interface BulletinBoardProps {
   onInterested: (post: { author: string; authorAvatar: string; title: string }) => void;
   boardPosts: BoardPost[];
   onUpdateBoardPosts: (posts: BoardPost[]) => void;
+  onCreateBoardPost?: (post: Omit<BoardPost, 'id' | 'replies'>) => Promise<void>;
+  onAddReply?: (postId: number, reply: Omit<BoardPostReply, 'id'>) => Promise<void>;
+  onToggleInterest?: (postId: number) => Promise<void>;
 }
 
 const translations = {
@@ -78,7 +81,7 @@ const translations = {
   }
 };
 
-export function BulletinBoard({ language, user, onInterested, boardPosts, onUpdateBoardPosts }: BulletinBoardProps) {
+export function BulletinBoard({ language, user, onInterested, boardPosts, onUpdateBoardPosts, onCreateBoardPost, onAddReply, onToggleInterest }: BulletinBoardProps) {
   const t = translations[language];
 
   // 非表示・削除された投稿を除外
@@ -233,11 +236,7 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
       return;
     }
     
-    // 新しいIDを生成（既存の最大IDに1を加算）
-    const maxId = boardPosts.length > 0 ? Math.max(...boardPosts.map(p => p.id)) : 0;
-    
-    const post: BoardPost = {
-      id: maxId + 1,
+    const post = {
       author: user.name,
       authorAvatar: user.name.substring(0, 2).toUpperCase(),
       title: newPost.title,
@@ -245,18 +244,24 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
       language: newPost.language,
       peopleNeeded: newPost.peopleNeeded,
       interested: 0,
-      tag: 'languageExchange',
+      tag: 'languageExchange' as const,
       time: language === 'ja' ? 'たった今' : 'Just now',
       image: previewUrl,
       displayType: newPost.displayType,
       expiryDate: newPost.expiryDate,
       isHidden: false,
       isDeleted: false,
-      replies: [],
     };
     
-    // boardPostsを更新
-    onUpdateBoardPosts([post, ...boardPosts]);
+    // Save to Supabase if available
+    if (onCreateBoardPost) {
+      await onCreateBoardPost(post);
+    } else {
+      // Fallback to local state update (for demo mode)
+      const maxId = boardPosts.length > 0 ? Math.max(...boardPosts.map(p => p.id)) : 0;
+      const postWithId: BoardPost = { ...post, id: maxId + 1, replies: [] };
+      onUpdateBoardPosts([postWithId, ...boardPosts]);
+    }
     
     setNewPost({ title: '', content: '', language: '', peopleNeeded: 1, displayType: 'story', expiryDate: '' });
     setSelectedFile(null);
@@ -264,7 +269,7 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
     setIsDialogOpen(false);
   };
 
-  const handleAddReply = (postId: number, content: string) => {
+  const handleAddReply = async (postId: number, content: string) => {
     // 承認待ちの場合は制限
     if (!user.approved) {
       const message = language === 'ja' 
@@ -296,23 +301,32 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
       return;
     }
     
-    // boardPostsを更新
-    onUpdateBoardPosts(boardPosts.map(post => {
-      if (post.id === postId) {
-        const newReply: BoardPostReply = {
-          id: (post.replies?.length || 0) + 1,
-          author: user.name,
-          authorAvatar: user.name.substring(0, 2).toUpperCase(),
-          content,
-          time: language === 'ja' ? 'たった今' : 'just now',
-        };
-        return {
-          ...post,
-          replies: [...(post.replies || []), newReply],
-        };
-      }
-      return post;
-    }));
+    const reply = {
+      author: user.name,
+      authorAvatar: user.name.substring(0, 2).toUpperCase(),
+      content,
+      time: language === 'ja' ? 'たった今' : 'just now',
+    };
+
+    // Save to Supabase if available
+    if (onAddReply) {
+      await onAddReply(postId, reply);
+    } else {
+      // Fallback to local state update (for demo mode)
+      onUpdateBoardPosts(boardPosts.map(post => {
+        if (post.id === postId) {
+          const newReply: BoardPostReply = {
+            id: (post.replies?.length || 0) + 1,
+            ...reply,
+          };
+          return {
+            ...post,
+            replies: [...(post.replies || []), newReply],
+          };
+        }
+        return post;
+      }));
+    }
   };
 
   const getTagColor = (tag: string) => {

@@ -11,6 +11,7 @@ interface AdminBoardsProps {
   language: Language;
   boardPosts: BoardPost[];
   onUpdateBoardPosts: (posts: BoardPost[]) => void;
+  onDeleteBoardPost?: (postId: number) => Promise<void>;
 }
 
 const translations = {
@@ -62,7 +63,7 @@ const translations = {
   }
 };
 
-export function AdminBoards({ language, boardPosts, onUpdateBoardPosts }: AdminBoardsProps) {
+export function AdminBoards({ language, boardPosts, onUpdateBoardPosts, onDeleteBoardPost }: AdminBoardsProps) {
   const t = translations[language];
   const [showTrash, setShowTrash] = useState(false);
   const [deleteReasons, setDeleteReasons] = useState({
@@ -93,7 +94,7 @@ export function AdminBoards({ language, boardPosts, onUpdateBoardPosts }: AdminB
     setDeleteReasons({ inappropriate: false, duplicate: false });
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (dialogState.postId === null) return;
 
     if (dialogState.action === 'delete') {
@@ -111,12 +112,17 @@ export function AdminBoards({ language, boardPosts, onUpdateBoardPosts }: AdminB
         
         console.log(`通知送信: ${post.author}宛 - ${notificationMessage}`);
         
-        setPosts(posts.map(p => 
-          p.id === dialogState.postId ? { ...p, isDeleted: true } : p
-        ));
-        onUpdateBoardPosts(posts.map(p => 
-          p.id === dialogState.postId ? { ...p, isDeleted: true } : p
-        ));
+        // Save to Supabase if available
+        if (onDeleteBoardPost) {
+          await onDeleteBoardPost(dialogState.postId);
+        } else {
+          setPosts(posts.map(p => 
+            p.id === dialogState.postId ? { ...p, isDeleted: true } : p
+          ));
+          onUpdateBoardPosts(posts.map(p => 
+            p.id === dialogState.postId ? { ...p, isDeleted: true } : p
+          ));
+        }
       }
     } else if (dialogState.action === 'restore') {
       setPosts(posts.map(post => 

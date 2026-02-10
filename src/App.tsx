@@ -194,11 +194,16 @@ function App() {
     sendMessage,
     markNotificationAsRead,
     dismissNotification,
+    createBoardPost,
+    addReply,
+    toggleInterest,
+    deleteBoardPost,
     setMessageThreads,
     setChatThreadMetadata,
     setNotifications,
     setBoardPosts,
     refreshUsers,
+    refreshBoardPosts,
   } = useData();
 
   const [currentPage, setCurrentPage] = useState<'landing' | 'auth-selection' | 'auth-complete' | 'login' | 'admin-login' | 'email-verification' | 'initial-registration' | 'profile' | 'dashboard' | 'admin'>('landing');
@@ -756,6 +761,9 @@ function App() {
           onDismissNotification={handleDismissNotification}
           boardPosts={boardPosts}
           onUpdateBoardPosts={setBoardPosts}
+          onCreateBoardPost={createBoardPost}
+          onAddReply={addReply}
+          onToggleInterest={toggleInterest}
         />
       )}
       {currentPage === 'admin' && user && (
@@ -784,6 +792,7 @@ function App() {
           onUpdateNotifications={setNotifications}
           boardPosts={boardPosts}
           onUpdateBoardPosts={setBoardPosts}
+          onDeleteBoardPost={deleteBoardPost}
           onSendBulkEmail={handleSendBulkEmail}
         />
       )}

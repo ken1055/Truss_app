@@ -42,6 +42,9 @@ interface DashboardProps {
   onDismissNotification: (notificationId: string) => void;
   boardPosts: BoardPost[];
   onUpdateBoardPosts: (posts: BoardPost[]) => void;
+  onCreateBoardPost?: (post: Omit<BoardPost, 'id' | 'replies'>) => Promise<void>;
+  onAddReply?: (postId: number, reply: Omit<BoardPostReply, 'id'>) => Promise<void>;
+  onToggleInterest?: (postId: number) => Promise<void>;
 }
 
 type Page = 'home' | 'events' | 'members' | 'bulletin' | 'gallery' | 'profile' | 'notifications' | 'messages' | 'message-detail';
@@ -112,7 +115,10 @@ export function Dashboard({
   notifications,
   onDismissNotification,
   boardPosts,
-  onUpdateBoardPosts
+  onUpdateBoardPosts,
+  onCreateBoardPost,
+  onAddReply,
+  onToggleInterest,
 }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
@@ -524,7 +530,7 @@ export function Dashboard({
         {currentPage === 'home' && <HomePage language={language} user={user} events={events} onNavigateToEvent={handleNavigateToEvent} onOpenProfile={onOpenProfile} onReopenInitialRegistration={onReopenInitialRegistration} onDismissReuploadNotification={onDismissReuploadNotification} />}
         {currentPage === 'events' && <EventsPage language={language} events={events} attendingEvents={attendingEvents} likedEvents={likedEvents} onToggleAttending={onToggleAttending} onToggleLike={onToggleLike} highlightEventId={highlightEventId} onAddEventParticipant={onAddEventParticipant} user={user} />}
         {currentPage === 'members' && <MembersPage language={language} />}
-        {currentPage === 'bulletin' && <BulletinBoard language={language} user={user} onInterested={handleInterested} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} />}
+        {currentPage === 'bulletin' && <BulletinBoard language={language} user={user} onInterested={handleInterested} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} onCreateBoardPost={onCreateBoardPost} onAddReply={onAddReply} onToggleInterest={onToggleInterest} />}
         {currentPage === 'gallery' && <GalleryPage language={language} />}
         {currentPage === 'profile' && <ProfilePage language={language} user={user} isProfileComplete={user.isProfileComplete} onClose={() => setCurrentPage('home')} />}
         {currentPage === 'notifications' && <NotificationsPage language={language} user={user} onMessageClick={handleMessageClick} interestedPosts={interestedPosts} notifications={notifications} onDismissNotification={onDismissNotification} unreadAdminMessagesCount={unreadMessageCount()} onAdminChatClick={handleAdminChatClick} />}
