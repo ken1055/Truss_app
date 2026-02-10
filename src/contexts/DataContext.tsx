@@ -747,22 +747,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Marking all messages as read for user:', userId);
       
-      // Get all unread messages for this user from admin
-      const { data, error } = await supabase
-        .from('messages')
-        .update({ read: true })
-        .eq('receiver_id', userId)
-        .eq('is_admin', true)
-        .eq('read', false)
-        .select();
-
-      console.log('Supabase update result:', { data, error });
-
-      if (error) {
-        console.error('Supabase update error:', error);
-        throw error;
-      }
-      
       // Update local state immediately for instant UI feedback
       setMessageThreads(prev => {
         const updated = { ...prev };
@@ -774,8 +758,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       
-      // Also refresh from database to ensure consistency
-      await fetchMessages();
+      // Update in Supabase (fire and forget, don't wait)
+      supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('receiver_id', userId)
+        .eq('is_admin', true)
+        .eq('read', false)
+        .then(({ error }) => {
+          if (error) {
+            console.error('Supabase update error:', error);
+          } else {
+            console.log('Supabase messages marked as read');
+          }
+        });
       
       console.log('All messages marked as read successfully');
     } catch (error) {

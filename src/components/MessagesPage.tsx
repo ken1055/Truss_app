@@ -53,8 +53,11 @@ export function MessagesPage({ language, user, recipientName, recipientAvatar, i
   const { markAllMessagesAsReadForUser } = useData();
   
   // チャットを開いたときに全メッセージを既読にする（運営からのメッセージの場合）
+  // 一度だけ実行するためにuseRefを使用
+  const hasMarkedAsRead = useRef(false);
   useEffect(() => {
-    if (isAdmin && user.id) {
+    if (isAdmin && user.id && !hasMarkedAsRead.current) {
+      hasMarkedAsRead.current = true;
       console.log('MessagesPage opened - marking all messages as read for user:', user.id);
       markAllMessagesAsReadForUser(user.id);
     }
