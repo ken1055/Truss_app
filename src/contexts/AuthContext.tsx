@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Add timeout to detect hanging queries
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout after 10s')), 10000);
+        setTimeout(() => reject(new Error('Query timeout after 30s')), 30000);
       });
 
       const queryPromise = supabase
@@ -144,9 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setSupabaseUser(session?.user || null);
 
+        // TOKEN_REFRESHEDイベントの場合は、既存のユーザー情報を保持
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed - keeping existing user data');
+          return;
+        }
+
         if (session?.user) {
+          // 既存のユーザー情報がある場合は保持（fetchAppUserが失敗しても）
           const appUser = await fetchAppUser(session.user.id);
-          setUser(appUser);
+          if (appUser) {
+            setUser(appUser);
+          } else {
+            console.log('fetchAppUser returned null, keeping existing user');
+            // 既存のユーザーを保持する（nullで上書きしない）
+          }
         } else {
           setUser(null);
         }
