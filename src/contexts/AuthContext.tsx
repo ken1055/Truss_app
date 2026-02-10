@@ -38,13 +38,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch app user from database
   const fetchAppUser = async (authId: string): Promise<AppUser | null> => {
     console.log('🔍 fetchAppUser called with authId:', authId);
+    console.log('⏳ Starting Supabase query...');
     
     try {
-      const { data, error } = await supabase
+      // Add timeout to detect hanging queries
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout after 10s')), 10000);
+      });
+
+      const queryPromise = supabase
         .from('users')
         .select('*')
         .eq('auth_id', authId)
         .single();
+
+      console.log('📡 Query sent, waiting for response...');
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
       console.log('📊 Supabase query result:', { data, error });
 
