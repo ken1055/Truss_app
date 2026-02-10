@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ArrowLeft, Send, Pin, Flag } from 'lucide-react';
 import type { Language, User, Message as AppMessage, MessageThread, ChatThreadMetadata } from '../App';
+import { useData } from '../contexts/DataContext';
 
 interface MessagesPageProps {
   language: Language;
@@ -49,6 +50,15 @@ const translations = {
 
 export function MessagesPage({ language, user, recipientName, recipientAvatar, isAdmin = false, onBack, messageHistory, setMessageHistory, messageThreads, onUpdateMessageThreads, chatThreadMetadata, onUpdateChatThreadMetadata }: MessagesPageProps) {
   const t = translations[language];
+  const { markAllMessagesAsReadForUser } = useData();
+  
+  // チャットを開いたときに全メッセージを既読にする（運営からのメッセージの場合）
+  useEffect(() => {
+    if (isAdmin && user.id) {
+      console.log('MessagesPage opened - marking all messages as read for user:', user.id);
+      markAllMessagesAsReadForUser(user.id);
+    }
+  }, [isAdmin, user.id, markAllMessagesAsReadForUser]);
   
   // 各相手ごとの初期メッセージを設定
   const getInitialMessage = () => {
