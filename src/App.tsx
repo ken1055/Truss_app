@@ -263,14 +263,14 @@ function App() {
   };
 
   const handleAdminLogin = async (email: string, password: string) => {
-    // デモ用簡易認証（開発中のみ）
-    if (email === 'admin@truss.com' && password === 'password') {
+    // デモ用簡易認証（開発中のみ）- Supabaseに接続しないローカルのみのデモ
+    if (email === 'demo@truss.local' && password === 'demo') {
       const adminUser: User = {
         id: 'admin-001',
         email: email,
-        name: '運営管理者',
-        nickname: 'Admin',
-        furigana: 'ウンエイカンリシャ',
+        name: 'デモ管理者',
+        nickname: 'Demo',
+        furigana: 'デモカンリシャ',
         birthday: '1990-01-01',
         languages: ['日本語', 'English'],
         birthCountry: 'Japan',
