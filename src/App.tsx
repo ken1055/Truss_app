@@ -263,6 +263,32 @@ function App() {
   };
 
   const handleAdminLogin = async (email: string, password: string) => {
+    // デモ用簡易認証（開発中のみ）
+    if (email === 'admin@truss.com' && password === 'password') {
+      const adminUser: User = {
+        id: 'admin-001',
+        email: email,
+        name: '運営管理者',
+        nickname: 'Admin',
+        furigana: 'ウンエイカンリシャ',
+        birthday: '1990-01-01',
+        languages: ['日本語', 'English'],
+        birthCountry: 'Japan',
+        category: 'japanese',
+        approved: true,
+        isAdmin: true,
+        registrationStep: 'fully_active',
+        emailVerified: true,
+        initialRegistered: true,
+        profileCompleted: true,
+        feePaid: true,
+      };
+      setUser(adminUser);
+      setCurrentPage('admin');
+      return;
+    }
+
+    // Supabase認証
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
