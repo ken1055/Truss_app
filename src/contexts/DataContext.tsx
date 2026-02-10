@@ -389,8 +389,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // =============================================
 
   const createEvent = async (eventData: Omit<Event, 'id' | 'currentParticipants' | 'likes'>) => {
+    console.log('=== createEvent called ===');
+    console.log('Event data:', eventData);
+    
+    // Check current auth session
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('Current session:', sessionData?.session ? 'Active' : 'None');
+    console.log('Session user:', sessionData?.session?.user?.email);
+    
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('events')
         .insert({
           title: eventData.title,
@@ -410,10 +418,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           tags_photo_contest: eventData.tags.photoContest,
           status: eventData.status,
           line_group_link: eventData.lineGroupLink || null,
-        });
+        })
+        .select();
+
+      console.log('Insert result - data:', data);
+      console.log('Insert result - error:', error);
 
       if (error) throw error;
       await fetchEvents();
+      console.log('Event created successfully!');
     } catch (error) {
       console.error('Error creating event:', error);
     }
@@ -619,10 +632,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // =============================================
 
   const sendMessage = async (receiverId: string, text: string, isAdmin: boolean = false) => {
-    if (!user) return;
+    console.log('=== sendMessage called ===');
+    console.log('User:', user);
+    console.log('Receiver ID:', receiverId);
+    
+    if (!user) {
+      console.log('No user, returning');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .insert({
           sender_id: user.id,
@@ -630,10 +650,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           sender_name: user.name,
           text,
           is_admin: isAdmin,
-        });
+        })
+        .select();
+
+      console.log('Message insert result - data:', data);
+      console.log('Message insert result - error:', error);
 
       if (error) throw error;
       await fetchMessages();
+      console.log('Message sent successfully!');
     } catch (error) {
       console.error('Error sending message:', error);
     }
