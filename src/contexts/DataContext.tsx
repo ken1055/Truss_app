@@ -748,16 +748,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.log('Marking all messages as read for user:', userId);
       
       // Get all unread messages for this user from admin
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .update({ read: true })
         .eq('receiver_id', userId)
         .eq('is_admin', true)
-        .eq('read', false);
+        .eq('read', false)
+        .select();
 
-      if (error) throw error;
+      console.log('Supabase update result:', { data, error });
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
       
-      // Also update local state immediately
+      // Update local state immediately for instant UI feedback
       setMessageThreads(prev => {
         const updated = { ...prev };
         if (updated[userId]) {
@@ -768,7 +774,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       
-      console.log('All messages marked as read');
+      // Also refresh from database to ensure consistency
+      await fetchMessages();
+      
+      console.log('All messages marked as read successfully');
     } catch (error) {
       console.error('Error marking all messages as read:', error);
     }
