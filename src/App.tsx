@@ -384,7 +384,7 @@ function App() {
       return;
     }
     
-    // New user registration
+    // New user registration or update existing user
     const now = new Date();
     const requestedAt = now.toISOString().split('T')[0];
     
@@ -396,30 +396,53 @@ function App() {
         return;
       }
 
-      // Insert new user into database
-      const { error } = await supabase
+      // Check if user already exists
+      const { data: existingUser } = await supabase
         .from('users')
-        .insert({
-          auth_id: authData.user.id,
-          email: tempEmail || authData.user.email,
-          name: data.name,
-          furigana: data.furigana,
-          category: data.category,
-          approved: false,
-          student_id_image: data.studentIdImage,
-          student_number: data.studentNumber,
-          grade: data.grade,
-          major: data.major,
-          registration_step: 'waiting_approval',
-          email_verified: true,
-          initial_registered: true,
-          profile_completed: false,
-          fee_paid: false,
-          requested_at: requestedAt,
-        });
+        .select('id')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      const userData = {
+        name: data.name,
+        furigana: data.furigana,
+        category: data.category,
+        approved: false,
+        student_id_image: data.studentIdImage,
+        student_number: data.studentNumber,
+        grade: data.grade,
+        major: data.major,
+        registration_step: 'waiting_approval',
+        email_verified: true,
+        initial_registered: true,
+        profile_completed: false,
+        fee_paid: false,
+        requested_at: requestedAt,
+      };
+
+      let error;
+      
+      if (existingUser) {
+        // Update existing user
+        const result = await supabase
+          .from('users')
+          .update(userData)
+          .eq('auth_id', authData.user.id);
+        error = result.error;
+      } else {
+        // Insert new user
+        const result = await supabase
+          .from('users')
+          .insert({
+            auth_id: authData.user.id,
+            email: tempEmail || authData.user.email,
+            ...userData,
+          });
+        error = result.error;
+      }
 
       if (error) {
-        console.error('Error creating user:', error);
+        console.error('Error saving user:', error);
         toast.error(language === 'ja' ? 'ユーザー登録エラー' : 'User registration error');
         return;
       }
