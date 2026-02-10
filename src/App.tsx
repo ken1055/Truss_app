@@ -222,7 +222,15 @@ function App() {
       // Navigate based on user state
       if (authUser.isAdmin) {
         setCurrentPage('admin');
+      } else if (!authUser.initialRegistered) {
+        // 初期登録がまだの場合、初期登録画面へ
+        setTempEmail(authUser.email);
+        setCurrentPage('initial-registration');
       } else if (!authUser.approved) {
+        // 承認待ち
+        setCurrentPage('dashboard');
+      } else if (!authUser.profileCompleted && authUser.category !== 'exchange') {
+        // プロフィール未完了（交換留学生以外）
         setCurrentPage('dashboard');
       } else {
         setCurrentPage('dashboard');
