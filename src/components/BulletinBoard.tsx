@@ -204,7 +204,7 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
     });
   };
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     // 承認待ちの場合は制限
     if (!user.approved) {
       const message = language === 'ja' 
