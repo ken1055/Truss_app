@@ -69,7 +69,14 @@ const initialAdminMessages: Message[] = [
 
 export function AdminChatPage({ language, user, onBack }: AdminChatPageProps) {
   const t = translations[language];
-  const { messageThreads, sendMessage } = useData();
+  const { messageThreads, sendMessage, markAllMessagesAsReadForUser } = useData();
+  
+  // チャットを開いたときに全メッセージを既読にする
+  useEffect(() => {
+    if (user.id) {
+      markAllMessagesAsReadForUser(user.id);
+    }
+  }, [user.id, markAllMessagesAsReadForUser]);
   
   // Supabaseからメッセージを取得し、ローカル形式に変換
   const getMessagesFromSupabase = (): Message[] => {

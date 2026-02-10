@@ -42,6 +42,7 @@ interface DataContextType {
   sendMessage: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
   sendBroadcast: (text: string, subjectJa: string, subjectEn: string) => Promise<void>;
   markMessageAsRead: (messageId: number) => Promise<void>;
+  markAllMessagesAsReadForUser: (userId: string) => Promise<void>;
   updateChatMetadata: (userId: string, updates: Partial<{ pinned: boolean; flagged: boolean }>) => Promise<void>;
   
   // Notification methods
@@ -741,6 +742,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Mark all messages as read for a specific user (when they open the chat)
+  const markAllMessagesAsReadForUser = async (userId: string) => {
+    try {
+      console.log('Marking all messages as read for user:', userId);
+      
+      // Get all unread messages for this user from admin
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('receiver_id', userId)
+        .eq('is_admin', true)
+        .eq('read', false);
+
+      if (error) throw error;
+      
+      // Also update local state immediately
+      setMessageThreads(prev => {
+        const updated = { ...prev };
+        if (updated[userId]) {
+          updated[userId] = updated[userId].map(msg => 
+            msg.isAdmin ? { ...msg, read: true } : msg
+          );
+        }
+        return updated;
+      });
+      
+      console.log('All messages marked as read');
+    } catch (error) {
+      console.error('Error marking all messages as read:', error);
+    }
+  };
+
   const updateChatMetadata = async (userId: string, updates: Partial<{ pinned: boolean; flagged: boolean }>) => {
     try {
       const { data: existing } = await supabase
@@ -1028,6 +1061,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     sendMessage,
     sendBroadcast,
     markMessageAsRead,
+    markAllMessagesAsReadForUser,
     updateChatMetadata,
     markNotificationAsRead,
     dismissNotification,
