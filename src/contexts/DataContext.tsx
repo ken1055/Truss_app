@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import type { 
   User, Event, EventParticipant, Message, MessageThread, 
-  ChatThreadMetadata, Notification, BoardPost, BoardPostReply 
+  ChatThreadMetadata, Notification, BoardPost, BoardPostReply, GalleryPhoto 
 } from '../App';
 
 interface DataContextType {
@@ -20,6 +20,7 @@ interface DataContextType {
   notifications: Notification[];
   boardPosts: BoardPost[];
   eventParticipants: { [eventId: number]: EventParticipant[] };
+  galleryPhotos: GalleryPhoto[];
   
   // Loading states
   loading: boolean;
@@ -53,12 +54,19 @@ interface DataContextType {
   toggleInterest: (postId: number) => Promise<void>;
   deleteBoardPost: (postId: number) => Promise<void>;
   
+  // Gallery methods
+  uploadGalleryPhoto: (photo: Omit<GalleryPhoto, 'id' | 'likes' | 'uploadedAt' | 'approved'>) => Promise<void>;
+  deleteGalleryPhoto: (photoId: number) => Promise<void>;
+  approveGalleryPhoto: (photoId: number) => Promise<void>;
+  likeGalleryPhoto: (photoId: number) => Promise<void>;
+  
   // Refresh methods
   refreshEvents: () => Promise<void>;
   refreshUsers: () => Promise<void>;
   refreshMessages: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
   refreshBoardPosts: () => Promise<void>;
+  refreshGalleryPhotos: () => Promise<void>;
   
   // Setters for backward compatibility
   setMessageThreads: React.Dispatch<React.SetStateAction<MessageThread>>;
@@ -80,6 +88,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [boardPosts, setBoardPosts] = useState<BoardPost[]>([]);
   const [eventParticipants, setEventParticipants] = useState<{ [eventId: number]: EventParticipant[] }>({});
+  const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
   const [loading, setLoading] = useState(true);
 
   // =============================================
@@ -332,6 +341,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchGalleryPhotos = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gallery_photos')
+        .select('*')
+        .order('uploaded_at', { ascending: false });
+
+      if (error) throw error;
+
+      const photos: GalleryPhoto[] = (data || []).map(p => ({
+        id: p.id,
+        eventId: p.event_id,
+        eventName: p.event_name,
+        eventDate: p.event_date,
+        image: p.image,
+        likes: p.likes,
+        height: p.height || undefined,
+        userId: p.user_id,
+        userName: p.user_name,
+        uploadedAt: p.uploaded_at,
+        approved: p.approved,
+      }));
+
+      setGalleryPhotos(photos);
+    } catch (error) {
+      console.error('Error fetching gallery photos:', error);
+    }
+  }, []);
+
   const fetchEventParticipants = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -370,12 +408,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         fetchUsers(),
         fetchBoardPosts(),
         fetchEventParticipants(),
+        fetchGalleryPhotos(),
       ]);
       setLoading(false);
     };
 
     initData();
-  }, [fetchEvents, fetchUsers, fetchBoardPosts, fetchEventParticipants]);
+  }, [fetchEvents, fetchUsers, fetchBoardPosts, fetchEventParticipants, fetchGalleryPhotos]);
 
   useEffect(() => {
     if (user) {
@@ -866,6 +905,106 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // =============================================
+  // Gallery Methods
+  // =============================================
+
+  const uploadGalleryPhoto = async (photoData: Omit<GalleryPhoto, 'id' | 'likes' | 'uploadedAt' | 'approved'>) => {
+    console.log('=== uploadGalleryPhoto called ===');
+    console.log('Photo data:', photoData);
+    
+    try {
+      const { data, error } = await supabase
+        .from('gallery_photos')
+        .insert({
+          event_id: photoData.eventId,
+          event_name: photoData.eventName,
+          event_date: photoData.eventDate,
+          image: photoData.image,
+          user_id: photoData.userId,
+          user_name: photoData.userName,
+          height: photoData.height || null,
+          likes: 0,
+          approved: false,
+        })
+        .select()
+        .single();
+
+      console.log('Gallery photo insert result:', { data, error });
+      
+      if (error) throw error;
+      await fetchGalleryPhotos();
+      console.log('Gallery photo uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading gallery photo:', error);
+      throw error;
+    }
+  };
+
+  const deleteGalleryPhoto = async (photoId: number) => {
+    console.log('=== deleteGalleryPhoto called ===');
+    
+    try {
+      const { error } = await supabase
+        .from('gallery_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (error) throw error;
+      await fetchGalleryPhotos();
+      console.log('Gallery photo deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting gallery photo:', error);
+      throw error;
+    }
+  };
+
+  const approveGalleryPhoto = async (photoId: number) => {
+    console.log('=== approveGalleryPhoto called ===');
+    
+    try {
+      const { error } = await supabase
+        .from('gallery_photos')
+        .update({ approved: true })
+        .eq('id', photoId);
+
+      if (error) throw error;
+      await fetchGalleryPhotos();
+      console.log('Gallery photo approved successfully!');
+    } catch (error) {
+      console.error('Error approving gallery photo:', error);
+      throw error;
+    }
+  };
+
+  const likeGalleryPhoto = async (photoId: number) => {
+    console.log('=== likeGalleryPhoto called ===');
+    
+    try {
+      // Get current likes count
+      const { data: currentPhoto, error: fetchError } = await supabase
+        .from('gallery_photos')
+        .select('likes')
+        .eq('id', photoId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Increment likes
+      const { error } = await supabase
+        .from('gallery_photos')
+        .update({ likes: (currentPhoto?.likes || 0) + 1 })
+        .eq('id', photoId);
+
+      if (error) throw error;
+      await fetchGalleryPhotos();
+      console.log('Gallery photo liked successfully!');
+    } catch (error) {
+      console.error('Error liking gallery photo:', error);
+      throw error;
+    }
+  };
+
   const value: DataContextType = {
     events,
     pendingUsers,
@@ -875,6 +1014,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     notifications,
     boardPosts,
     eventParticipants,
+    galleryPhotos,
     loading,
     createEvent,
     updateEvent,
@@ -895,11 +1035,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addReply,
     toggleInterest,
     deleteBoardPost,
+    uploadGalleryPhoto,
+    deleteGalleryPhoto,
+    approveGalleryPhoto,
+    likeGalleryPhoto,
     refreshEvents: fetchEvents,
     refreshUsers: fetchUsers,
     refreshMessages: fetchMessages,
     refreshNotifications: fetchNotifications,
     refreshBoardPosts: fetchBoardPosts,
+    refreshGalleryPhotos: fetchGalleryPhotos,
     setMessageThreads,
     setChatThreadMetadata,
     setNotifications,

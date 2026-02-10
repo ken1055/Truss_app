@@ -160,6 +160,20 @@ export interface BoardPostReply {
   time: string;
 }
 
+export interface GalleryPhoto {
+  id: number;
+  eventId: number;
+  eventName: string;
+  eventDate: string;
+  image: string;
+  likes: number;
+  height?: number;
+  userId: string;
+  userName: string;
+  uploadedAt: string;
+  approved: boolean;
+}
+
 function App() {
   // Auth context
   const { 

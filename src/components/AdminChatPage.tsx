@@ -3,7 +3,8 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ArrowLeft, Send, Pin, Flag, Mail } from 'lucide-react';
-import type { Language, User } from '../App';
+import type { Language, User, Message as AppMessage } from '../App';
+import { useData } from '../contexts/DataContext';
 
 interface AdminChatPageProps {
   language: Language;
@@ -68,43 +69,69 @@ const initialAdminMessages: Message[] = [
 
 export function AdminChatPage({ language, user, onBack }: AdminChatPageProps) {
   const t = translations[language];
+  const { messageThreads, sendMessage } = useData();
   
-  // ローカルストレージから運営とのメッセージ履歴を取得
-  const getStoredMessages = () => {
-    const stored = localStorage.getItem(`adminChat_${user.id}`);
-    if (stored) {
-      return JSON.parse(stored);
+  // Supabaseからメッセージを取得し、ローカル形式に変換
+  const getMessagesFromSupabase = (): Message[] => {
+    const thread = messageThreads[user.id];
+    if (thread && thread.length > 0) {
+      return thread.map((msg, index) => ({
+        id: msg.id,
+        sender: msg.isAdmin ? 'admin' as const : 'user' as const,
+        text: msg.text,
+        time: msg.time,
+        pinned: msg.pinned,
+        flagged: msg.flagged,
+        subject: msg.isBroadcast ? msg.broadcastSubject : undefined,
+      }));
     }
     return initialAdminMessages;
   };
   
-  const [messages, setMessages] = useState<Message[]>(getStoredMessages());
+  const [messages, setMessages] = useState<Message[]>(getMessagesFromSupabase());
   const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Supabaseのデータが変更されたら更新
+  useEffect(() => {
+    const updatedMessages = getMessagesFromSupabase();
+    if (updatedMessages.length > 0) {
+      setMessages(updatedMessages);
+    }
+  }, [messageThreads, user.id]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // メッセージ履歴をローカルストレージに保存
-  useEffect(() => {
-    localStorage.setItem(`adminChat_${user.id}`, JSON.stringify(messages));
-  }, [messages, user.id]);
-
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const message: Message = {
-        id: messages.length + 1,
-        sender: 'user',
-        text: newMessage,
-        time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([...messages, message]);
-      setNewMessage('');
+  const handleSendMessage = async () => {
+    if (newMessage.trim() && !isSending) {
+      setIsSending(true);
+      
+      try {
+        // Supabaseにメッセージを保存
+        console.log('Sending message to admin from user:', user.id);
+        await sendMessage('admin-001', newMessage, false);  // ユーザーから運営へ
+        
+        // ローカルステートも更新（楽観的更新）
+        const message: Message = {
+          id: Date.now(),
+          sender: 'user',
+          text: newMessage,
+          time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages(prev => [...prev, message]);
+        setNewMessage('');
+      } catch (error) {
+        console.error('Error sending message:', error);
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -253,7 +280,7 @@ export function AdminChatPage({ language, user, onBack }: AdminChatPageProps) {
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || isSending}
             className="bg-[#49B1E4] hover:bg-[#3A9BD4] px-6"
           >
             <Send className="w-4 h-4" />

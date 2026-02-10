@@ -531,7 +531,7 @@ export function Dashboard({
         {currentPage === 'events' && <EventsPage language={language} events={events} attendingEvents={attendingEvents} likedEvents={likedEvents} onToggleAttending={onToggleAttending} onToggleLike={onToggleLike} highlightEventId={highlightEventId} onAddEventParticipant={onAddEventParticipant} user={user} />}
         {currentPage === 'members' && <MembersPage language={language} />}
         {currentPage === 'bulletin' && <BulletinBoard language={language} user={user} onInterested={handleInterested} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} onCreateBoardPost={onCreateBoardPost} onAddReply={onAddReply} onToggleInterest={onToggleInterest} />}
-        {currentPage === 'gallery' && <GalleryPage language={language} />}
+        {currentPage === 'gallery' && <GalleryPage language={language} currentUser={user} />}
         {currentPage === 'profile' && <ProfilePage language={language} user={user} isProfileComplete={user.isProfileComplete} onClose={() => setCurrentPage('home')} />}
         {currentPage === 'notifications' && <NotificationsPage language={language} user={user} onMessageClick={handleMessageClick} interestedPosts={interestedPosts} notifications={notifications} onDismissNotification={onDismissNotification} unreadAdminMessagesCount={unreadMessageCount()} onAdminChatClick={handleAdminChatClick} />}
         {currentPage === 'messages' && selectedNotification && (

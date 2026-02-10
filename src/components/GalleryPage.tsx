@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import Masonry from 'react-responsive-masonry';
-import type { Language, GalleryPhoto } from '../App';
+import type { Language, GalleryPhoto, Event, User } from '../App';
+import { useData } from '../contexts/DataContext';
 import galleryImage1 from 'figma:asset/5bec45231966eb516b1ff876bdd9c01730a2ea71.png';
 import galleryImage2 from 'figma:asset/d597fc6f73c7dcc01c7cca1b364724822218cb54.png';
 import galleryImage3 from 'figma:asset/34d4087d851f43f06c21d5465b0a4d56d285bb92.png';
@@ -20,6 +21,7 @@ import galleryImage6 from 'figma:asset/5c88bfa752b169cbf87848a61f07459b431f0d47.
 
 interface GalleryPageProps {
   language: Language;
+  currentUser?: User | null;
 }
 
 const translations = {
@@ -63,23 +65,35 @@ const translations = {
   }
 };
 
-export function GalleryPage({ language }: GalleryPageProps) {
+export function GalleryPage({ language, currentUser }: GalleryPageProps) {
   const t = translations[language];
+  const { galleryPhotos, events: supabaseEvents, uploadGalleryPhoto, likeGalleryPhoto } = useData();
   const [likedPhotos, setLikedPhotos] = useState<Set<number>>(new Set());
   const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // イベントリスト
-  const events = [
+  // イベントリストをSupabaseから取得したものとサンプルをマージ
+  const sampleEvents = [
     { id: 1, name: language === 'ja' ? 'お花見パーティー' : 'Cherry Blossom Party', date: '2025-03-28' },
     { id: 2, name: language === 'ja' ? '国際料理大会' : 'International Cooking Contest', date: '2025-04-15' },
     { id: 3, name: language === 'ja' ? '言語交換カフェ' : 'Language Exchange Cafe', date: '2025-03-20' },
     { id: 4, name: language === 'ja' ? '夏祭り' : 'Summer Festival', date: '2024-08-10' },
   ];
 
-  const photos: GalleryPhoto[] = [
+  // Supabaseのイベントを整形
+  const events = supabaseEvents.length > 0 
+    ? supabaseEvents.map(e => ({
+        id: e.id,
+        name: language === 'ja' ? e.title : (e.titleEn || e.title),
+        date: e.date,
+      }))
+    : sampleEvents;
+
+  // サンプル写真（Supabaseに写真がない場合のフォールバック）
+  const samplePhotos: GalleryPhoto[] = [
     {
       id: 1,
       eventId: 4,
@@ -160,7 +174,22 @@ export function GalleryPage({ language }: GalleryPageProps) {
     },
   ];
 
-  const toggleLike = (photoId: number) => {
+  // Supabaseから取得した承認済み写真とサンプル写真をマージ
+  const approvedPhotos = galleryPhotos.filter(p => p.approved);
+  const photos = approvedPhotos.length > 0 ? approvedPhotos : samplePhotos;
+
+  const toggleLike = async (photoId: number) => {
+    // Check if this is a Supabase photo (not sample)
+    const isSupabasePhoto = approvedPhotos.some(p => p.id === photoId);
+    
+    if (isSupabasePhoto && !likedPhotos.has(photoId)) {
+      try {
+        await likeGalleryPhoto(photoId);
+      } catch (error) {
+        console.error('Error liking photo:', error);
+      }
+    }
+    
     setLikedPhotos(prev => {
       const newSet = new Set(prev);
       if (newSet.has(photoId)) {
@@ -172,44 +201,55 @@ export function GalleryPage({ language }: GalleryPageProps) {
     });
   };
 
-  const handlePhotoUpload = () => {
+  const handlePhotoUpload = async () => {
     if (!selectedEvent || selectedFiles.length === 0) return;
+    if (!currentUser) {
+      toast.error(language === 'ja' ? 'ログインしてください' : 'Please login first');
+      return;
+    }
 
     const selectedEventData = events.find(e => e.name === selectedEvent);
     if (!selectedEventData) return;
 
-    // 承認待ち写真をlocalStorageに保存
-    const pendingPhotos = JSON.parse(localStorage.getItem('pendingPhotos') || '[]');
-    const nextId = Math.max(...pendingPhotos.map((p: GalleryPhoto) => p.id), 0) + 1;
+    setIsUploading(true);
 
-    selectedFiles.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newPhoto: GalleryPhoto = {
-          id: nextId + index,
-          eventId: selectedEventData.id,
-          eventName: selectedEventData.name,
-          eventDate: selectedEventData.date,
-          image: reader.result as string,
-          likes: 0,
-          height: 200,
-          userId: 'current-user-id', // 実際のアプリではログインユーザーのIDを使用
-          userName: language === 'ja' ? '山田太郎' : 'Taro Yamada',
-          uploadedAt: new Date().toISOString(),
-          approved: false,
-        };
+    try {
+      for (const file of selectedFiles) {
+        const reader = new FileReader();
+        await new Promise<void>((resolve, reject) => {
+          reader.onloadend = async () => {
+            try {
+              console.log('Uploading photo to Supabase...');
+              await uploadGalleryPhoto({
+                eventId: selectedEventData.id,
+                eventName: selectedEventData.name,
+                eventDate: selectedEventData.date,
+                image: reader.result as string,
+                height: 200,
+                userId: currentUser.id,
+                userName: currentUser.nickname || currentUser.name || 'Unknown',
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
 
-        pendingPhotos.push(newPhoto);
-        localStorage.setItem('pendingPhotos', JSON.stringify(pendingPhotos));
-      };
-      reader.readAsDataURL(file);
-    });
-
-    setIsAddPhotoOpen(false);
-    setSelectedEvent('');
-    setSelectedFiles([]);
-    setPreviewUrls([]);
-    toast.success(language === 'ja' ? '写真をアップロードしました。運営の承認をお待ちください。' : 'Photos uploaded. Waiting for admin approval.');
+      setIsAddPhotoOpen(false);
+      setSelectedEvent('');
+      setSelectedFiles([]);
+      setPreviewUrls([]);
+      toast.success(language === 'ja' ? '写真をアップロードしました。運営の承認をお待ちください。' : 'Photos uploaded. Waiting for admin approval.');
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error(language === 'ja' ? '写真のアップロードに失敗しました' : 'Failed to upload photos');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -331,10 +371,10 @@ export function GalleryPage({ language }: GalleryPageProps) {
             </Button>
             <Button
               type="button"
-              disabled={!selectedEvent || selectedFiles.length === 0}
+              disabled={!selectedEvent || selectedFiles.length === 0 || isUploading}
               onClick={handlePhotoUpload}
             >
-              {t.add}
+              {isUploading ? (language === 'ja' ? 'アップロード中...' : 'Uploading...') : t.add}
             </Button>
           </DialogFooter>
         </DialogContent>

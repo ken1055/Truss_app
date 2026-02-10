@@ -6,6 +6,7 @@ import { CheckCircle, XCircle, Calendar, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner@2.0.3';
 import type { Language, GalleryPhoto } from '../App';
+import { useData } from '../contexts/DataContext';
 
 interface AdminGalleryApprovalsProps {
   language: Language;
@@ -38,40 +39,42 @@ const translations = {
 
 export function AdminGalleryApprovals({ language }: AdminGalleryApprovalsProps) {
   const t = translations[language];
+  const { galleryPhotos, approveGalleryPhoto, deleteGalleryPhoto } = useData();
   
-  // localStorageから承認待ち写真を取得
-  const [pendingPhotos, setPendingPhotos] = useState<GalleryPhoto[]>(() => {
-    const pending = localStorage.getItem('pendingPhotos');
-    return pending ? JSON.parse(pending) : [];
-  });
+  // Supabaseから未承認写真を取得
+  const pendingPhotos = galleryPhotos.filter(p => !p.approved);
 
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleApprove = (photoId: number) => {
-    const photoToApprove = pendingPhotos.find(p => p.id === photoId);
-    if (photoToApprove) {
-      // 承認済み写真リストに追加
-      const approvedPhotos = JSON.parse(localStorage.getItem('approvedPhotos') || '[]');
-      approvedPhotos.push({ ...photoToApprove, approved: true });
-      localStorage.setItem('approvedPhotos', JSON.stringify(approvedPhotos));
+  const handleApprove = async (photoId: number) => {
+    setIsProcessing(true);
+    try {
+      console.log('Approving photo:', photoId);
+      await approveGalleryPhoto(photoId);
+      toast.success(t.approved);
+      setSelectedPhoto(null);
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      toast.error(language === 'ja' ? '承認に失敗しました' : 'Failed to approve');
+    } finally {
+      setIsProcessing(false);
     }
-    
-    // 承認待ちリストから削除
-    const updated = pendingPhotos.filter(p => p.id !== photoId);
-    setPendingPhotos(updated);
-    localStorage.setItem('pendingPhotos', JSON.stringify(updated));
-    
-    toast.success(t.approved);
-    setSelectedPhoto(null);
   };
 
-  const handleReject = (photoId: number) => {
-    const updated = pendingPhotos.filter(p => p.id !== photoId);
-    setPendingPhotos(updated);
-    localStorage.setItem('pendingPhotos', JSON.stringify(updated));
-    
-    toast.error(t.rejected);
-    setSelectedPhoto(null);
+  const handleReject = async (photoId: number) => {
+    setIsProcessing(true);
+    try {
+      console.log('Rejecting photo:', photoId);
+      await deleteGalleryPhoto(photoId);
+      toast.error(t.rejected);
+      setSelectedPhoto(null);
+    } catch (error) {
+      console.error('Error rejecting photo:', error);
+      toast.error(language === 'ja' ? '拒否に失敗しました' : 'Failed to reject');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (pendingPhotos.length === 0) {
@@ -125,6 +128,7 @@ export function AdminGalleryApprovals({ language }: AdminGalleryApprovalsProps) 
                     handleApprove(photo.id);
                   }}
                   size="sm"
+                  disabled={isProcessing}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -137,6 +141,7 @@ export function AdminGalleryApprovals({ language }: AdminGalleryApprovalsProps) 
                   }}
                   size="sm"
                   variant="destructive"
+                  disabled={isProcessing}
                   className="flex-1"
                 >
                   <XCircle className="w-4 h-4 mr-2" />
@@ -175,6 +180,7 @@ export function AdminGalleryApprovals({ language }: AdminGalleryApprovalsProps) 
                 <div className="flex gap-2">
                   <Button 
                     onClick={() => handleApprove(selectedPhoto.id)}
+                    disabled={isProcessing}
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
@@ -183,6 +189,7 @@ export function AdminGalleryApprovals({ language }: AdminGalleryApprovalsProps) 
                   <Button 
                     onClick={() => handleReject(selectedPhoto.id)}
                     variant="destructive"
+                    disabled={isProcessing}
                   >
                     <XCircle className="w-4 h-4 mr-2" />
                     {t.reject}

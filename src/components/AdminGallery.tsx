@@ -3,26 +3,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Upload, X, Trash2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
-import type { Language } from '../App';
+import type { Language, GalleryPhoto, Event } from '../App';
+import { useData } from '../contexts/DataContext';
 
 interface AdminGalleryProps {
   language: Language;
-}
-
-interface GalleryPhoto {
-  id: string;
-  eventId: string;
-  eventTitle: string;
-  imageUrl: string;
-  uploadedAt: string;
-  uploadedBy: string;
-}
-
-interface Event {
-  id: string;
-  titleJa: string;
-  titleEn: string;
-  date: string;
 }
 
 const translations = {
@@ -66,76 +51,34 @@ const translations = {
   }
 };
 
-// サンプルイベントデータ
-const sampleEvents: Event[] = [
-  {
-    id: 'event-1',
-    titleJa: '国際料理大会',
-    titleEn: 'International Cooking Contest',
-    date: '2026-04-01',
-  },
-  {
-    id: 'event-2',
-    titleJa: 'スポーツ大会',
-    titleEn: 'Sports Day',
-    date: '2026-04-01',
-  },
-  {
-    id: 'event-3',
-    titleJa: 'お花見大会',
-    titleEn: 'Cherry Blossom Party',
-    date: '2026-04-15',
-  },
-  {
-    id: 'event-4',
-    titleJa: '言語交換カフェ',
-    titleEn: 'Language Exchange Cafe',
-    date: '2026-04-22',
-  },
-  {
-    id: 'event-5',
-    titleJa: 'ゲーム大会',
-    titleEn: 'Game Tournament',
-    date: '2026-04-29',
-  },
-];
-
-// サンプル写真データ
-const samplePhotos: GalleryPhoto[] = [
-  {
-    id: 'photo-1',
-    eventId: 'event-3',
-    eventTitle: 'お花見大会',
-    imageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=800',
-    uploadedAt: '2026-04-16 10:30',
-    uploadedBy: '運営太郎',
-  },
-  {
-    id: 'photo-2',
-    eventId: 'event-3',
-    eventTitle: 'お花見大会',
-    imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800',
-    uploadedAt: '2026-04-16 10:32',
-    uploadedBy: '運営花子',
-  },
-  {
-    id: 'photo-3',
-    eventId: 'event-3',
-    eventTitle: 'お花見大会',
-    imageUrl: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800',
-    uploadedAt: '2026-04-16 10:35',
-    uploadedBy: '運営太郎',
-  },
-];
-
 export function AdminGallery({ language }: AdminGalleryProps) {
   const t = translations[language];
-  const [photos, setPhotos] = useState<GalleryPhoto[]>(samplePhotos);
+  const { galleryPhotos, events: supabaseEvents, uploadGalleryPhoto, deleteGalleryPhoto } = useData();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [filterEventId, setFilterEventId] = useState<string>('all');
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Supabaseのイベントを整形、またはサンプルを使用
+  const events = supabaseEvents.length > 0 
+    ? supabaseEvents.map(e => ({
+        id: e.id.toString(),
+        titleJa: e.title,
+        titleEn: e.titleEn || e.title,
+        date: e.date,
+      }))
+    : [
+        { id: 'event-1', titleJa: '国際料理大会', titleEn: 'International Cooking Contest', date: '2026-04-01' },
+        { id: 'event-2', titleJa: 'スポーツ大会', titleEn: 'Sports Day', date: '2026-04-01' },
+        { id: 'event-3', titleJa: 'お花見大会', titleEn: 'Cherry Blossom Party', date: '2026-04-15' },
+        { id: 'event-4', titleJa: '言語交換カフェ', titleEn: 'Language Exchange Cafe', date: '2026-04-22' },
+        { id: 'event-5', titleJa: 'ゲーム大会', titleEn: 'Game Tournament', date: '2026-04-29' },
+      ];
+
+  // Supabaseの写真を使用（すべての写真を表示）
+  const photos = galleryPhotos;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -146,7 +89,7 @@ export function AdminGallery({ language }: AdminGalleryProps) {
     setPreviewUrls(urls);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedEventId) {
       toast.error(language === 'ja' ? 'イベントを選択してください' : 'Please select an event');
       return;
@@ -157,20 +100,43 @@ export function AdminGallery({ language }: AdminGalleryProps) {
       return;
     }
 
-    // アップロード処理（実際にはサーバーに送信）
-    const event = sampleEvents.find(e => e.id === selectedEventId);
-    const newPhotos: GalleryPhoto[] = selectedFiles.map((file, index) => ({
-      id: `photo-${Date.now()}-${index}`,
-      eventId: selectedEventId,
-      eventTitle: language === 'ja' ? (event?.titleJa || '') : (event?.titleEn || ''),
-      imageUrl: previewUrls[index],
-      uploadedAt: new Date().toLocaleString('ja-JP'),
-      uploadedBy: '運営管理者',
-    }));
+    setIsUploading(true);
+    const event = events.find(e => e.id === selectedEventId);
 
-    setPhotos([...newPhotos, ...photos]);
-    toast.success(t.uploadSuccess);
-    handleCancelUpload();
+    try {
+      for (const file of selectedFiles) {
+        const reader = new FileReader();
+        await new Promise<void>((resolve, reject) => {
+          reader.onloadend = async () => {
+            try {
+              console.log('Admin uploading photo to Supabase...');
+              await uploadGalleryPhoto({
+                eventId: parseInt(selectedEventId) || 0,
+                eventName: language === 'ja' ? (event?.titleJa || '') : (event?.titleEn || ''),
+                eventDate: event?.date || new Date().toISOString().split('T')[0],
+                image: reader.result as string,
+                height: 200,
+                userId: 'admin-001', // Admin user ID
+                userName: '運営管理者',
+              });
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      toast.success(t.uploadSuccess);
+      handleCancelUpload();
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error(language === 'ja' ? 'アップロードに失敗しました' : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleCancelUpload = () => {
@@ -180,20 +146,26 @@ export function AdminGallery({ language }: AdminGalleryProps) {
     setPreviewUrls([]);
   };
 
-  const handleDeletePhoto = (photoId: string) => {
+  const handleDeletePhoto = async (photoId: number) => {
     if (window.confirm(t.confirmDelete)) {
-      setPhotos(photos.filter(p => p.id !== photoId));
-      toast.success(t.deleteSuccess);
+      try {
+        await deleteGalleryPhoto(photoId);
+        toast.success(t.deleteSuccess);
+      } catch (error) {
+        console.error('Error deleting photo:', error);
+        toast.error(language === 'ja' ? '削除に失敗しました' : 'Delete failed');
+      }
     }
   };
 
   const filteredPhotos = filterEventId === 'all' 
     ? photos 
-    : photos.filter(p => p.eventId === filterEventId);
+    : photos.filter(p => p.eventId.toString() === filterEventId);
 
   // イベントごとの写真数を計算
   const photoCountByEvent = photos.reduce((acc, photo) => {
-    acc[photo.eventId] = (acc[photo.eventId] || 0) + 1;
+    const eventKey = photo.eventId.toString();
+    acc[eventKey] = (acc[eventKey] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -241,7 +213,7 @@ export function AdminGallery({ language }: AdminGalleryProps) {
               className="w-full bg-[#EEEBE3] border-0 rounded-[8px] px-4 py-2 text-[#3D3D4E]"
             >
               <option value="">{t.selectEventPlaceholder}</option>
-              {sampleEvents.map(event => (
+              {events.map(event => (
                 <option key={event.id} value={event.id}>
                   {language === 'ja' ? event.titleJa : event.titleEn} ({event.date})
                 </option>
@@ -288,9 +260,10 @@ export function AdminGallery({ language }: AdminGalleryProps) {
           <div className="flex gap-2">
             <Button
               onClick={handleUpload}
+              disabled={isUploading}
               className="flex-1 bg-[#00A63E] hover:bg-[#008C35] text-white"
             >
-              {t.upload}
+              {isUploading ? (language === 'ja' ? 'アップロード中...' : 'Uploading...') : t.upload}
             </Button>
             <Button
               onClick={handleCancelUpload}
@@ -314,7 +287,7 @@ export function AdminGallery({ language }: AdminGalleryProps) {
           className="w-full md:w-auto bg-[#EEEBE3] border-0 rounded-[8px] px-4 py-2 text-[#3D3D4E]"
         >
           <option value="all">{t.allEvents}</option>
-          {sampleEvents.map(event => (
+          {events.map(event => (
             <option key={event.id} value={event.id}>
               {language === 'ja' ? event.titleJa : event.titleEn} 
               {photoCountByEvent[event.id] ? ` (${photoCountByEvent[event.id]})` : ''}
@@ -337,18 +310,25 @@ export function AdminGallery({ language }: AdminGalleryProps) {
               className="group relative bg-white rounded-[14px] border border-[rgba(61,61,78,0.15)] overflow-hidden aspect-square"
             >
               <img
-                src={photo.imageUrl}
-                alt={photo.eventTitle}
+                src={photo.image}
+                alt={photo.eventName}
                 className="w-full h-full object-cover"
               />
+              
+              {/* 承認バッジ */}
+              {!photo.approved && (
+                <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                  {language === 'ja' ? '承認待ち' : 'Pending'}
+                </div>
+              )}
               
               {/* オーバーレイ */}
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex flex-col justify-between p-4 opacity-0 group-hover:opacity-100">
                 {/* イベント名 */}
                 <div>
-                  <p className="text-white text-sm font-medium mb-1">{photo.eventTitle}</p>
-                  <p className="text-white text-xs opacity-80">{photo.uploadedAt}</p>
-                  <p className="text-white text-xs opacity-80">{t.uploadedBy} {photo.uploadedBy}</p>
+                  <p className="text-white text-sm font-medium mb-1">{photo.eventName}</p>
+                  <p className="text-white text-xs opacity-80">{new Date(photo.uploadedAt).toLocaleString()}</p>
+                  <p className="text-white text-xs opacity-80">{t.uploadedBy} {photo.userName}</p>
                 </div>
 
                 {/* 削除ボタン */}
