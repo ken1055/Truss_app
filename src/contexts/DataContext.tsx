@@ -932,10 +932,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // =============================================
 
   const createBoardPost = async (post: Omit<BoardPost, 'id' | 'replies'>) => {
-    if (!user) return;
+    if (!user) {
+      console.error('createBoardPost: No user logged in');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Creating board post:', post.title);
+      const { data, error } = await supabase
         .from('board_posts')
         .insert({
           author_id: user.id,
@@ -954,9 +958,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           is_deleted: false,
           category: post.category || null,
           date: post.date || null,
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Board post insert error:', error);
+        throw error;
+      }
+      console.log('Board post created successfully:', data);
       await fetchBoardPosts();
     } catch (error) {
       console.error('Error creating board post:', error);
@@ -964,10 +973,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addReply = async (postId: number, reply: Omit<BoardPostReply, 'id'>) => {
-    if (!user) return;
+    if (!user) {
+      console.error('addReply: No user logged in');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Adding reply to post:', postId);
+      const { data, error } = await supabase
         .from('board_post_replies')
         .insert({
           post_id: postId,
@@ -975,9 +988,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           author: reply.author,
           author_avatar: reply.authorAvatar,
           content: reply.content,
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Reply insert error:', error);
+        throw error;
+      }
+      console.log('Reply added successfully:', data);
       await fetchBoardPosts();
     } catch (error) {
       console.error('Error adding reply:', error);
@@ -985,31 +1003,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleInterest = async (postId: number) => {
-    if (!user) return;
+    if (!user) {
+      console.error('toggleInterest: No user logged in');
+      return;
+    }
 
     try {
-      const { data: existing } = await supabase
+      console.log('Toggling interest for post:', postId, 'User:', user.id);
+      
+      const { data: existing, error: checkError } = await supabase
         .from('board_post_interests')
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', user.id)
         .single();
 
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing interest:', checkError);
+      }
+
       if (existing) {
-        await supabase
+        console.log('Removing interest...');
+        const { error: deleteError } = await supabase
           .from('board_post_interests')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
-        await supabase.rpc('decrement_interested', { post_id: postId });
+        if (deleteError) console.error('Delete interest error:', deleteError);
+        
+        const { error: rpcError } = await supabase.rpc('decrement_interested', { post_id: postId });
+        if (rpcError) console.error('decrement_interested RPC error:', rpcError);
       } else {
-        await supabase
+        console.log('Adding interest...');
+        const { error: insertError } = await supabase
           .from('board_post_interests')
           .insert({ post_id: postId, user_id: user.id });
-        await supabase.rpc('increment_interested', { post_id: postId });
+        if (insertError) console.error('Insert interest error:', insertError);
+        
+        const { error: rpcError } = await supabase.rpc('increment_interested', { post_id: postId });
+        if (rpcError) console.error('increment_interested RPC error:', rpcError);
       }
 
       await fetchBoardPosts();
+      console.log('Interest toggle completed');
     } catch (error) {
       console.error('Error toggling interest:', error);
     }
