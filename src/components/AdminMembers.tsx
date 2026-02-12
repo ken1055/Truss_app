@@ -23,6 +23,8 @@ interface AdminMembersProps {
   onRequestReupload?: (userId: string, reasons?: string[]) => void;
   onOpenChat?: (userId: string) => void;
   onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
+  onConfirmFeePayment?: (userId: string) => void;
+  onDeleteUser?: (userId: string) => void;
 }
 
 const translations = {
@@ -62,7 +64,7 @@ const translations = {
   }
 };
 
-export function AdminMembers({ language, approvedMembers, pendingUsers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail }: AdminMembersProps) {
+export function AdminMembers({ language, approvedMembers, pendingUsers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onDeleteUser }: AdminMembersProps) {
   const t = translations[language];
   const [activeTab, setActiveTab] = useState<'approved' | 'pending'>('approved');
   const [searchQuery, setSearchQuery] = useState('');
@@ -678,7 +680,17 @@ export function AdminMembers({ language, approvedMembers, pendingUsers, onApprov
           language={language}
           user={selectedUser}
           onDelete={() => {
+            if (onDeleteUser) {
+              onDeleteUser(selectedUser.id);
+            }
             toast.success(language === 'ja' ? 'メンバーを削除しました' : 'Member deleted successfully');
+            setShowDetailModal(false);
+          }}
+          onConfirmFeePayment={() => {
+            if (onConfirmFeePayment) {
+              onConfirmFeePayment(selectedUser.id);
+            }
+            toast.success(language === 'ja' ? '年会費の支払いを確認しました' : 'Fee payment confirmed');
             setShowDetailModal(false);
           }}
         />

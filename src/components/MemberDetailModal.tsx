@@ -14,6 +14,7 @@ interface MemberDetailModalProps {
   onApprove?: () => void;
   onReject?: () => void;
   onDelete?: () => void;
+  onConfirmFeePayment?: () => void;
 }
 
 const translations = {
@@ -38,6 +39,10 @@ const translations = {
     japanese: '日本人学生・国内学生',
     regularInternational: '正規留学生',
     exchange: '交換留学生',
+    feeStatus: '年会費',
+    feePaid: '支払い済み',
+    feeUnpaid: '未払い',
+    confirmFeePayment: '支払い確認',
   },
   en: {
     applicationDate: 'Application Date',
@@ -60,6 +65,10 @@ const translations = {
     japanese: 'Japanese Student',
     regularInternational: 'Regular International',
     exchange: 'Exchange Student',
+    feeStatus: 'Annual Fee',
+    feePaid: 'Paid',
+    feeUnpaid: 'Unpaid',
+    confirmFeePayment: 'Confirm Payment',
   }
 };
 
@@ -71,7 +80,8 @@ export function MemberDetailModal({
   isPending = false,
   onApprove,
   onReject,
-  onDelete
+  onDelete,
+  onConfirmFeePayment
 }: MemberDetailModalProps) {
   const t = translations[language];
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -216,6 +226,27 @@ export function MemberDetailModal({
               <p className="text-[#4A5565] text-sm tracking-[-0.1504px] mb-1">{t.languages}</p>
               <p className="text-[#101828] text-base tracking-[-0.3125px]">{user.languages || '-'}</p>
             </div>
+
+            {/* 年会費（日本人学生のみ） */}
+            {user.category === 'japanese' && !isPending && (
+              <div className="col-span-2">
+                <p className="text-[#4A5565] text-sm tracking-[-0.1504px] mb-2">{t.feeStatus}</p>
+                <div className="flex items-center gap-3">
+                  <Badge className={`${user.feePaid ? 'bg-[#00A63E] text-white' : 'bg-[#D4183D] text-white'} border-0 font-medium text-xs px-3 py-1`}>
+                    {user.feePaid ? t.feePaid : t.feeUnpaid}
+                  </Badge>
+                  {!user.feePaid && onConfirmFeePayment && (
+                    <Button
+                      onClick={onConfirmFeePayment}
+                      className="bg-[#00A63E] hover:bg-[#008C35] text-white h-8 px-4 text-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {t.confirmFeePayment}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 承認・拒否ボタン（承認待ちの場合のみ） */}

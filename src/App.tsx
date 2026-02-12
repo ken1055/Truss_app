@@ -205,6 +205,8 @@ function App() {
     approveUser,
     rejectUser,
     requestReupload,
+    confirmFeePayment,
+    deleteUser,
     sendMessage,
     markNotificationAsRead,
     dismissNotification,
@@ -796,6 +798,8 @@ function App() {
           onApproveUser={handleApproveUser}
           onRejectUser={handleRejectUser}
           onRequestReupload={handleRequestReupload}
+          onConfirmFeePayment={confirmFeePayment}
+          onDeleteUser={deleteUser}
           messageThreads={messageThreads}
           onUpdateMessageThreads={setMessageThreads}
           onSendMessage={sendMessage}

@@ -15,9 +15,11 @@ interface AdminMembersManagementProps {
   onRequestReupload?: (userId: string, reasons?: string[]) => void;
   onOpenChat?: (userId: string) => void;
   onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
+  onConfirmFeePayment?: (userId: string) => void;
+  onDeleteUser?: (userId: string) => void;
 }
 
-export function AdminMembersManagement({ language, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail }: AdminMembersManagementProps) {
+export function AdminMembersManagement({ language, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onDeleteUser }: AdminMembersManagementProps) {
   return (
     <AdminMembers 
       language={language} 
@@ -28,6 +30,8 @@ export function AdminMembersManagement({ language, pendingUsers, approvedMembers
       onRequestReupload={onRequestReupload}
       onOpenChat={onOpenChat}
       onSendBulkEmail={onSendBulkEmail}
+      onConfirmFeePayment={onConfirmFeePayment}
+      onDeleteUser={onDeleteUser}
     />
   );
 }

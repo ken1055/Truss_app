@@ -37,6 +37,8 @@ interface DataContextType {
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
   requestReupload: (userId: string, reason: string) => Promise<void>;
+  confirmFeePayment: (userId: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
   
   // Message methods
   sendMessage: (receiverId: string, text: string, isAdmin?: boolean) => Promise<void>;
@@ -667,6 +669,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 年会費支払い確認（管理者用）
+  const confirmFeePayment = async (userId: string) => {
+    try {
+      console.log('Confirming fee payment for user:', userId);
+      const { error } = await supabase
+        .from('users')
+        .update({
+          fee_paid: true,
+          registration_step: 'fully_active',
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log('Fee payment confirmed successfully');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error confirming fee payment:', error);
+    }
+  };
+
+  // ユーザー削除（管理者用）
+  const deleteUser = async (userId: string) => {
+    try {
+      console.log('Deleting user:', userId);
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log('User deleted successfully');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
   // =============================================
   // Message Methods
   // =============================================
@@ -1063,6 +1108,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     approveUser,
     rejectUser,
     requestReupload,
+    confirmFeePayment,
+    deleteUser,
     sendMessage,
     sendBroadcast,
     markMessageAsRead,
