@@ -262,6 +262,9 @@ export function InitialRegistration({ language, onLanguageChange, email, onCompl
   const departmentRef = useRef<HTMLDivElement>(null);
   const gradeRef = useRef<HTMLDivElement>(null);
   const studentIdRef = useRef<HTMLDivElement>(null);
+  
+  // IME入力中かどうかを追跡
+  const isComposingRef = useRef(false);
 
   const faculties = FACULTIES[language];
   const departments = formData.faculty ? faculties[formData.faculty as keyof typeof faculties] || [] : [];
@@ -500,13 +503,30 @@ export function InitialRegistration({ language, onLanguageChange, email, onCompl
                   placeholder={t.furiganaPlaceholder}
                   value={formData.furigana}
                   onChange={(e) => {
-                    // ひらがなをカタカナに自動変換
-                    const katakana = e.target.value.replace(/[\u3041-\u3096]/g, (match) => {
+                    // IME入力中は変換せずそのまま保存
+                    if (isComposingRef.current) {
+                      setFormData({ ...formData, furigana: e.target.value });
+                    } else {
+                      // ひらがなをカタカナに自動変換
+                      const katakana = e.target.value.replace(/[\u3041-\u3096]/g, (match) => {
+                        const chr = match.charCodeAt(0) + 0x60;
+                        return String.fromCharCode(chr);
+                      });
+                      setFormData({ ...formData, furigana: katakana });
+                    }
+                    setErrors({ ...errors, furigana: false });
+                  }}
+                  onCompositionStart={() => {
+                    isComposingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    isComposingRef.current = false;
+                    // IME確定時にひらがなをカタカナに変換
+                    const katakana = e.currentTarget.value.replace(/[\u3041-\u3096]/g, (match) => {
                       const chr = match.charCodeAt(0) + 0x60;
                       return String.fromCharCode(chr);
                     });
                     setFormData({ ...formData, furigana: katakana });
-                    setErrors({ ...errors, furigana: false });
                   }}
                   className={`h-12 ${errors.furigana ? 'border-red-500 focus:ring-red-500' : ''}`}
                   autoComplete="off"

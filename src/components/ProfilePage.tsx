@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -82,6 +82,9 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
   const t = translations[language];
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
+  
+  // IME入力中かどうかを追跡
+  const isComposingRef = useRef(false);
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
@@ -284,8 +287,25 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
                 <Input
                   value={editedUser.furigana}
                   onChange={(e) => {
-                    // ひらがなをカタカナに自動変換
-                    const katakana = e.target.value.replace(/[\u3041-\u3096]/g, (match) => {
+                    // IME入力中は変換せずそのまま保存
+                    if (isComposingRef.current) {
+                      setEditedUser({ ...editedUser, furigana: e.target.value });
+                    } else {
+                      // ひらがなをカタカナに自動変換
+                      const katakana = e.target.value.replace(/[\u3041-\u3096]/g, (match) => {
+                        const chr = match.charCodeAt(0) + 0x60;
+                        return String.fromCharCode(chr);
+                      });
+                      setEditedUser({ ...editedUser, furigana: katakana });
+                    }
+                  }}
+                  onCompositionStart={() => {
+                    isComposingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    isComposingRef.current = false;
+                    // IME確定時にひらがなをカタカナに変換
+                    const katakana = e.currentTarget.value.replace(/[\u3041-\u3096]/g, (match) => {
                       const chr = match.charCodeAt(0) + 0x60;
                       return String.fromCharCode(chr);
                     });
