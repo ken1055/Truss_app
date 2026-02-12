@@ -522,10 +522,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const registerForEvent = async (eventId: number, photoRefusal: boolean = false) => {
-    if (!user) return;
+    if (!user) {
+      console.error('registerForEvent: No user logged in');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Registering for event:', eventId, 'User:', user.id);
+      const { data, error } = await supabase
         .from('event_participants')
         .insert({
           event_id: eventId,
@@ -533,12 +537,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           user_name: user.name,
           user_nickname: user.nickname,
           photo_refusal: photoRefusal,
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Event registration insert error:', error);
+        throw error;
+      }
+      console.log('Event registration successful:', data);
       
       // Increment participant count
-      await supabase.rpc('increment_participants', { event_id: eventId });
+      const { error: rpcError } = await supabase.rpc('increment_participants', { event_id: eventId });
+      if (rpcError) {
+        console.error('increment_participants RPC error:', rpcError);
+      }
       
       await Promise.all([fetchEvents(), fetchEventParticipants()]);
     } catch (error) {
@@ -547,19 +559,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const unregisterFromEvent = async (eventId: number) => {
-    if (!user) return;
+    if (!user) {
+      console.error('unregisterFromEvent: No user logged in');
+      return;
+    }
 
     try {
+      console.log('Unregistering from event:', eventId, 'User:', user.id);
       const { error } = await supabase
         .from('event_participants')
         .delete()
         .eq('event_id', eventId)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Event unregistration delete error:', error);
+        throw error;
+      }
+      console.log('Event unregistration successful');
       
       // Decrement participant count
-      await supabase.rpc('decrement_participants', { event_id: eventId });
+      const { error: rpcError } = await supabase.rpc('decrement_participants', { event_id: eventId });
+      if (rpcError) {
+        console.error('decrement_participants RPC error:', rpcError);
+      }
       
       await Promise.all([fetchEvents(), fetchEventParticipants()]);
     } catch (error) {
@@ -568,32 +591,50 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleEventLike = async (eventId: number) => {
-    if (!user) return;
+    if (!user) {
+      console.error('toggleEventLike: No user logged in');
+      return;
+    }
 
     try {
+      console.log('Toggling like for event:', eventId, 'User:', user.id);
+      
       // Check if already liked
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('event_likes')
         .select('id')
         .eq('event_id', eventId)
         .eq('user_id', user.id)
         .single();
 
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing like:', checkError);
+      }
+
       if (existing) {
-        await supabase
+        console.log('Removing like...');
+        const { error: deleteError } = await supabase
           .from('event_likes')
           .delete()
           .eq('event_id', eventId)
           .eq('user_id', user.id);
-        await supabase.rpc('decrement_event_likes', { p_event_id: eventId });
+        if (deleteError) console.error('Delete like error:', deleteError);
+        
+        const { error: rpcError } = await supabase.rpc('decrement_event_likes', { p_event_id: eventId });
+        if (rpcError) console.error('decrement_event_likes RPC error:', rpcError);
       } else {
-        await supabase
+        console.log('Adding like...');
+        const { error: insertError } = await supabase
           .from('event_likes')
           .insert({ event_id: eventId, user_id: user.id });
-        await supabase.rpc('increment_event_likes', { p_event_id: eventId });
+        if (insertError) console.error('Insert like error:', insertError);
+        
+        const { error: rpcError } = await supabase.rpc('increment_event_likes', { p_event_id: eventId });
+        if (rpcError) console.error('increment_event_likes RPC error:', rpcError);
       }
 
       await fetchEvents();
+      console.log('Like toggle completed');
     } catch (error) {
       console.error('Error toggling event like:', error);
     }
