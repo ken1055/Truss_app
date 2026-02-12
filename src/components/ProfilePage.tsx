@@ -292,6 +292,10 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
                     setEditedUser({ ...editedUser, furigana: katakana });
                   }}
                   autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-form-type="other"
                 />
               ) : (
                 <p className="text-gray-900 mt-1">{user.furigana}</p>

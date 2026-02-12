@@ -509,6 +509,11 @@ export function InitialRegistration({ language, onLanguageChange, email, onCompl
                     setErrors({ ...errors, furigana: false });
                   }}
                   className={`h-12 ${errors.furigana ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-form-type="other"
                 />
                 {errors.furigana && (
                   <p className="text-sm text-red-600 mt-1">{t.required}</p>
