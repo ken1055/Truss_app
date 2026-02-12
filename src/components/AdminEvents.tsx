@@ -361,8 +361,12 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
     setShowDeleteConfirm(true);
   };
 
-  const handleConfirmDelete = () => {
-    toast.success(language === 'ja' ? 'イベントを削除しました' : 'Event deleted successfully');
+  const handleConfirmDelete = async () => {
+    if (selectedEvent) {
+      console.log('Deleting event:', selectedEvent.id);
+      await onDeleteEvent(selectedEvent.id);
+      toast.success(language === 'ja' ? 'イベントを削除しました' : 'Event deleted successfully');
+    }
     setShowDeleteConfirm(false);
     handleCloseForm();
   };
@@ -1344,10 +1348,48 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
             <div className="p-6">
               <div className="flex gap-2">
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (confirmType === 'create') {
+                      // Supabaseにイベントを作成
+                      const eventData = {
+                        title: newEvent.titleJa,
+                        titleEn: newEvent.titleEn || undefined,
+                        description: newEvent.descriptionJa,
+                        descriptionEn: newEvent.descriptionEn || undefined,
+                        date: newEvent.date,
+                        time: `${newEvent.startTime}〜${newEvent.endTime}`,
+                        location: newEvent.location,
+                        locationEn: newEvent.locationEn || undefined,
+                        googleMapUrl: newEvent.googleMapUrl || undefined,
+                        maxParticipants: parseInt(newEvent.maxParticipants) || 30,
+                        image: newEvent.image || undefined,
+                        tags: { friendsCanMeet: false, photoContest: false },
+                        status: 'upcoming' as const,
+                        lineGroupLink: newEvent.lineGroupUrl || undefined,
+                      };
+                      console.log('Creating event with data:', eventData);
+                      await onCreateEvent(eventData);
                       toast.success(language === 'ja' ? 'イベントを作成しました' : 'Event created successfully');
                     } else {
+                      // Supabaseでイベントを更新
+                      if (selectedEvent) {
+                        const updateData = {
+                          title: newEvent.titleJa,
+                          titleEn: newEvent.titleEn || undefined,
+                          description: newEvent.descriptionJa,
+                          descriptionEn: newEvent.descriptionEn || undefined,
+                          date: newEvent.date,
+                          time: `${newEvent.startTime}〜${newEvent.endTime}`,
+                          location: newEvent.location,
+                          locationEn: newEvent.locationEn || undefined,
+                          googleMapUrl: newEvent.googleMapUrl || undefined,
+                          maxParticipants: parseInt(newEvent.maxParticipants) || 30,
+                          image: newEvent.image || undefined,
+                          lineGroupLink: newEvent.lineGroupUrl || undefined,
+                        };
+                        console.log('Updating event with data:', updateData);
+                        await onUpdateEvent(selectedEvent.id, updateData);
+                      }
                       toast.success(language === 'ja' ? 'イベントを更新しました' : 'Event updated successfully');
                       setEditMode(false);
                     }
