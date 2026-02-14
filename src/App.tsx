@@ -692,10 +692,28 @@ function App() {
   // Show loading screen while auth is loading
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          {/* Truss Logo Animation */}
+          <div className="relative mb-6">
+            <div className="w-16 h-16 mx-auto">
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                {/* Animated truss structure */}
+                <g className="animate-pulse">
+                  <line x1="10" y1="80" x2="50" y2="20" stroke="#f97316" strokeWidth="4" strokeLinecap="round" />
+                  <line x1="50" y1="20" x2="90" y2="80" stroke="#f97316" strokeWidth="4" strokeLinecap="round" />
+                  <line x1="10" y1="80" x2="90" y2="80" stroke="#f97316" strokeWidth="4" strokeLinecap="round" />
+                  <line x1="30" y1="50" x2="70" y2="50" stroke="#fb923c" strokeWidth="3" strokeLinecap="round" className="opacity-70" />
+                </g>
+                {/* Loading dots */}
+                <circle cx="50" cy="50" r="3" fill="#f97316" className="animate-ping" />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-xl font-bold text-orange-600 mb-2">TRUSS</h2>
+          <p className="text-gray-500 text-sm">
+            {language === 'ja' ? '読み込み中...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );

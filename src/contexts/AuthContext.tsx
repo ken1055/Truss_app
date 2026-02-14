@@ -38,12 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch app user from database
   const fetchAppUser = async (authId: string): Promise<AppUser | null> => {
     console.log('🔍 fetchAppUser called with authId:', authId);
-    console.log('⏳ Starting Supabase query...');
+    const startTime = Date.now();
     
     try {
-      // Add timeout to detect hanging queries
+      // Add timeout to detect hanging queries (reduced to 8 seconds)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout after 30s')), 30000);
+        setTimeout(() => reject(new Error('Query timeout after 8s')), 8000);
       });
 
       const queryPromise = supabase
@@ -52,9 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('auth_id', authId)
         .single();
 
-      console.log('📡 Query sent, waiting for response...');
-
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      
+      console.log(`📊 Query completed in ${Date.now() - startTime}ms`);
 
       console.log('📊 Supabase query result:', { data, error });
 
@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
+      const startTime = Date.now();
       console.log('🚀 initAuth starting...');
       
       // Check localStorage for stored session
@@ -116,12 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       try {
         // Get current session
+        const sessionStart = Date.now();
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('📋 Session:', session ? `Found (${session.user?.email})` : 'None');
+        console.log(`📋 Session retrieved in ${Date.now() - sessionStart}ms:`, session ? `Found (${session.user?.email})` : 'None');
         
         if (session) {
           console.log('🔑 Session expires at:', new Date(session.expires_at! * 1000).toLocaleString());
-          console.log('🔄 Token will auto-refresh:', session.expires_at! * 1000 > Date.now());
         }
         
         setSession(session);
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('❌ Error initializing auth:', error);
       } finally {
         setLoading(false);
-        console.log('✅ initAuth complete');
+        console.log(`✅ initAuth complete in ${Date.now() - startTime}ms`);
       }
     };
 

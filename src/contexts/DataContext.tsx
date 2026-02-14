@@ -99,11 +99,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // =============================================
 
   const fetchEvents = useCallback(async () => {
+    const startTime = Date.now();
     try {
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .order('date', { ascending: false });
+
+      console.log(`📅 Events fetched in ${Date.now() - startTime}ms`);
 
       if (error) throw error;
 
@@ -138,22 +141,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUsers = useCallback(async () => {
+    const startTime = Date.now();
     try {
-      // Fetch pending users
-      const { data: pending, error: pendingError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('approved', false)
-        .eq('registration_step', 'waiting_approval');
+      // Fetch pending and approved users in parallel
+      const [pendingResult, approvedResult] = await Promise.all([
+        supabase
+          .from('users')
+          .select('*')
+          .eq('approved', false)
+          .eq('registration_step', 'waiting_approval'),
+        supabase
+          .from('users')
+          .select('*')
+          .eq('approved', true)
+      ]);
+
+      console.log(`👥 Users fetched in ${Date.now() - startTime}ms`);
+
+      const { data: pending, error: pendingError } = pendingResult;
+      const { data: approved, error: approvedError } = approvedResult;
 
       if (pendingError) throw pendingError;
-
-      // Fetch approved users
-      const { data: approved, error: approvedError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('approved', true);
-
       if (approvedError) throw approvedError;
 
       const convertUser = (u: any): User => ({
@@ -405,14 +413,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initData = async () => {
+      const startTime = Date.now();
+      console.log('🚀 Starting data initialization...');
       setLoading(true);
+      
+      // Phase 1: Load essential data first (events)
+      await fetchEvents();
+      console.log(`✅ Phase 1 (events) completed in ${Date.now() - startTime}ms`);
+      
+      // Phase 2: Load remaining data in parallel
       await Promise.all([
-        fetchEvents(),
         fetchUsers(),
         fetchBoardPosts(),
         fetchEventParticipants(),
         fetchGalleryPhotos(),
       ]);
+      
+      console.log(`✅ All data loaded in ${Date.now() - startTime}ms`);
       setLoading(false);
     };
 
@@ -421,6 +438,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      // Load user-specific data after main data is loaded
       fetchMessages();
       fetchNotifications();
     }
