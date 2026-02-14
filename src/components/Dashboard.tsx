@@ -302,7 +302,10 @@ export function Dashboard({
                     </div>
                     <div className="p-3 border-t">
                       <Button
-                        onClick={() => setCurrentPage('notifications')}
+                        onClick={() => {
+                          setCurrentPage('notifications');
+                          setNotificationOpen(false);
+                        }}
                         variant="ghost"
                         className="w-full text-[#49B1E4] hover:bg-[#F5F1E8]"
                       >
