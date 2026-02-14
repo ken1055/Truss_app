@@ -179,6 +179,7 @@ function App() {
   const { 
     user: authUser, 
     loading: authLoading, 
+    session,
     signInWithGoogle, 
     signOut,
     updateUser: updateAuthUser,
@@ -256,11 +257,13 @@ function App() {
       } else {
         setCurrentPage('dashboard');
       }
-    } else if (!authLoading) {
+    } else if (!authLoading && !session) {
+      // セッションがない場合のみランディングページへ
+      // セッションがあるがユーザーデータがまだの場合は待機
       setUser(null);
       setCurrentPage('landing');
     }
-  }, [authUser, authLoading]);
+  }, [authUser, authLoading, session]);
 
   // Load user's event participation status
   useEffect(() => {
@@ -689,8 +692,10 @@ function App() {
     toast.success(language === 'ja' ? `${userIds.length}人に${messageType}を送信しました` : `Sent ${messageType} to ${userIds.length} members`);
   };
 
-  // Show loading screen while auth is loading
-  if (authLoading) {
+  // Show loading screen while auth is loading or session exists but user data is not yet loaded
+  const isLoadingUser = authLoading || (session && !authUser);
+  
+  if (isLoadingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white">
         <div className="text-center">
