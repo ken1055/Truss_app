@@ -110,10 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       console.log('🚀 initAuth starting...');
       
+      // Check localStorage for stored session
+      const storedSession = localStorage.getItem('truss-app-auth');
+      console.log('💾 Stored session in localStorage:', storedSession ? 'Found' : 'Not found');
+      
       try {
         // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         console.log('📋 Session:', session ? `Found (${session.user?.email})` : 'None');
+        
+        if (session) {
+          console.log('🔑 Session expires at:', new Date(session.expires_at! * 1000).toLocaleString());
+          console.log('🔄 Token will auto-refresh:', session.expires_at! * 1000 > Date.now());
+        }
         
         setSession(session);
         setSupabaseUser(session?.user || null);
@@ -209,15 +218,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign in with Google
   const signInWithGoogle = async () => {
     try {
+      console.log('🔐 Starting Google OAuth sign in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          // access_type: 'offline' でリフレッシュトークンを取得
+          queryParams: {
+            access_type: 'offline',
+          },
         },
       });
 
+      if (error) {
+        console.error('❌ Google OAuth error:', error);
+      }
       return { error: error || null };
     } catch (error) {
+      console.error('❌ Google OAuth exception:', error);
       return { error: error as Error };
     }
   };

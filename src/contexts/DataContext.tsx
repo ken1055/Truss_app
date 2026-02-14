@@ -427,6 +427,154 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [user, fetchMessages, fetchNotifications]);
 
   // =============================================
+  // Realtime Subscriptions
+  // =============================================
+
+  useEffect(() => {
+    console.log('🔄 Setting up realtime subscriptions...');
+
+    // イベントの変更をリッスン
+    const eventsChannel = supabase
+      .channel('events-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'events' },
+        (payload) => {
+          console.log('📢 Events changed:', payload.eventType);
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    // 掲示板の変更をリッスン
+    const boardPostsChannel = supabase
+      .channel('board-posts-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'board_posts' },
+        (payload) => {
+          console.log('📢 Board posts changed:', payload.eventType);
+          fetchBoardPosts();
+        }
+      )
+      .subscribe();
+
+    // ギャラリーの変更をリッスン
+    const galleryChannel = supabase
+      .channel('gallery-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'gallery_photos' },
+        (payload) => {
+          console.log('📢 Gallery changed:', payload.eventType);
+          fetchGalleryPhotos();
+        }
+      )
+      .subscribe();
+
+    // ユーザーの変更をリッスン（管理者用）
+    const usersChannel = supabase
+      .channel('users-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        (payload) => {
+          console.log('📢 Users changed:', payload.eventType);
+          fetchUsers();
+        }
+      )
+      .subscribe();
+
+    // イベント参加者の変更をリッスン
+    const participantsChannel = supabase
+      .channel('participants-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'event_participants' },
+        (payload) => {
+          console.log('📢 Event participants changed:', payload.eventType);
+          fetchEventParticipants();
+          fetchEvents(); // 参加者数も更新
+        }
+      )
+      .subscribe();
+
+    console.log('✅ Realtime subscriptions set up');
+
+    // クリーンアップ
+    return () => {
+      console.log('🧹 Cleaning up realtime subscriptions...');
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(boardPostsChannel);
+      supabase.removeChannel(galleryChannel);
+      supabase.removeChannel(usersChannel);
+      supabase.removeChannel(participantsChannel);
+    };
+  }, [fetchEvents, fetchBoardPosts, fetchGalleryPhotos, fetchUsers, fetchEventParticipants]);
+
+  // メッセージのリアルタイムサブスクリプション（ユーザーがログインしている場合）
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔄 Setting up message realtime subscription for user:', user.id);
+
+    // メッセージの変更をリッスン
+    const messagesChannel = supabase
+      .channel(`messages-${user.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('📨 New message received:', payload);
+          fetchMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `is_broadcast=eq.true`
+        },
+        (payload) => {
+          console.log('📢 Broadcast message received:', payload);
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    // 通知の変更をリッスン
+    const notificationsChannel = supabase
+      .channel(`notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('🔔 Notification changed:', payload.eventType);
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🧹 Cleaning up message subscriptions...');
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(notificationsChannel);
+    };
+  }, [user, fetchMessages, fetchNotifications]);
+
+  // =============================================
   // Event Methods
   // =============================================
 
