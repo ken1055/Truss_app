@@ -174,7 +174,7 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
         ref={(el) => { eventRefs.current[event.id] = el; }}
       >
         <Card className={`overflow-hidden hover:shadow-lg transition-all duration-500 ${isHighlighted ? 'ring-4 ring-[#49B1E4] shadow-2xl' : ''}`}>
-          <div className="h-72 bg-gradient-to-br from-blue-100 to-purple-100 relative">
+          <div className="h-48 sm:h-72 bg-gradient-to-br from-blue-100 to-purple-100 relative">
             <img 
               src={event.image} 
               alt={displayTitle}
@@ -182,41 +182,45 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
               className="w-full h-full object-cover"
             />
           </div>
-          <CardContent className="pt-3 pb-3">
-            <h3 className="text-[#3D3D4E] mb-2">{displayTitle}</h3>
-            <div className="flex items-center gap-2 text-sm text-[#6B6B7A] mb-2">
-              <Calendar className="w-4 h-4" />
-              <span>{event.date}</span>
-              <Clock className="w-4 h-4 ml-2" />
-              <span>{event.time}</span>
+          <CardContent className="pt-3 pb-3 px-3 sm:px-6">
+            <h3 className="text-[#3D3D4E] mb-2 text-sm sm:text-base">{displayTitle}</h3>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-[#6B6B7A] mb-2">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>{event.date}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>{event.time}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-[#6B6B7A] mb-3">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
+            <div className="flex items-start gap-2 text-xs sm:text-sm text-[#6B6B7A] mb-3">
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
               {event.googleMapUrl ? (
                 <a 
                   href={event.googleMapUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 hover:text-[#49B1E4] transition-colors underline"
+                  className="flex items-center gap-1 hover:text-[#49B1E4] transition-colors underline break-all"
                 >
                   <span>{displayLocation}</span>
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
                 </a>
               ) : (
-                <span>{displayLocation}</span>
+                <span className="break-all">{displayLocation}</span>
               )}
             </div>
-            <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-3 sm:gap-4 mb-3">
               <button 
                 onClick={() => onToggleLike(event.id)}
                 className="flex items-center gap-1 text-pink-600 hover:text-pink-700 transition-colors"
               >
-                <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm">{event.likes} {t.likes}</span>
+                <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'fill-current' : ''}`} />
+                <span className="text-xs sm:text-sm">{event.likes} {t.likes}</span>
               </button>
               <div className="flex items-center gap-1 text-blue-600">
-                <Users className="w-5 h-5" />
-                <span className="text-sm">{event.currentParticipants} {t.participants}</span>
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm">{event.currentParticipants} {t.participants}</span>
               </div>
             </div>
             {event.status === 'upcoming' && (

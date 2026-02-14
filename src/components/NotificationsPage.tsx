@@ -62,26 +62,26 @@ export function NotificationsPage({ language, user, onMessageClick, interestedPo
             className="cursor-pointer hover:shadow-lg transition-all border-2 border-[#49B1E4] bg-gradient-to-r from-white to-[#E0F3FB]"
             onClick={onAdminChatClick}
           >
-            <CardContent className="p-5">
-              <div className="flex items-center gap-4">
-                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-[#49B1E4] to-[#3A9FD3] flex items-center justify-center shadow-md">
-                  <MessageSquare className="w-7 h-7 text-white" />
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#49B1E4] to-[#3A9FD3] flex items-center justify-center shadow-md">
+                  <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-lg text-[#3D3D4E] mb-1">{t.adminChat}</p>
-                  <p className="text-[#49B1E4] text-sm font-semibold flex items-center gap-1">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base sm:text-lg text-[#3D3D4E] mb-0.5 sm:mb-1">{t.adminChat}</p>
+                  <p className="text-[#49B1E4] text-xs sm:text-sm font-semibold flex items-center gap-1">
                     {t.tapToOpenChat}
                   </p>
                 </div>
                 {unreadAdminMessagesCount && unreadAdminMessagesCount > 0 && (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md">
-                    <span className="text-white text-sm font-bold">{unreadAdminMessagesCount}</span>
+                  <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                    <span className="text-white text-xs sm:text-sm font-bold">{unreadAdminMessagesCount}</span>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
-          <div className="border-t-2 border-gray-300 my-4"></div>
+          <div className="border-t-2 border-gray-300 my-3 sm:my-4"></div>
         </div>
       )}
 
@@ -110,33 +110,33 @@ export function NotificationsPage({ language, user, onMessageClick, interestedPo
                     }
                   }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#49B1E4] flex items-center justify-center">
-                        <IconComponent className="w-6 h-6 text-white" />
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#49B1E4] flex items-center justify-center">
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="font-medium text-[#3D3D4E]">{title}</p>
-                          <span className="text-[#6B6B7A] text-xs flex-shrink-0">{notification.time}</span>
+                          <p className="font-medium text-[#3D3D4E] text-sm sm:text-base truncate">{title}</p>
+                          <span className="text-[#6B6B7A] text-xs flex-shrink-0 whitespace-nowrap">{notification.time}</span>
                         </div>
-                        <p className="text-[#6B6B7A] text-sm">{description}</p>
+                        <p className="text-[#6B6B7A] text-xs sm:text-sm line-clamp-2">{description}</p>
                         {(notification.type === 'message' || notification.linkPage === 'admin-chat') && (
                           <p className="text-[#49B1E4] text-xs mt-2 font-medium">
                             {language === 'ja' ? 'タップしてメッセージを開く →' : 'Tap to open message →'}
                           </p>
                         )}
                       </div>
-                      {/* 削除ボタン */}
+                      {/* 削除ボタン - モバイルでも表示 */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onDismissNotification(notification.id);
                         }}
-                        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
+                        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                         aria-label="Close notification"
                       >
-                        <X className="w-5 h-5 text-gray-600" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                       </button>
                     </div>
                   </CardContent>
