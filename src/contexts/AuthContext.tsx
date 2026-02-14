@@ -107,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    let mounted = true;
+    
     const initAuth = async () => {
       const startTime = Date.now();
       console.log('🚀 initAuth starting...');
@@ -115,15 +117,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedSession = localStorage.getItem('truss-app-auth');
       console.log('💾 Stored session in localStorage:', storedSession ? 'Found' : 'Not found');
       
+      if (storedSession) {
+        try {
+          const parsed = JSON.parse(storedSession);
+          console.log('💾 Stored session details:', {
+            hasAccessToken: !!parsed?.access_token,
+            hasRefreshToken: !!parsed?.refresh_token,
+            expiresAt: parsed?.expires_at ? new Date(parsed.expires_at * 1000).toLocaleString() : 'N/A'
+          });
+        } catch (e) {
+          console.log('💾 Could not parse stored session');
+        }
+      }
+      
       try {
         // Get current session
         const sessionStart = Date.now();
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError);
+        }
+        
         console.log(`📋 Session retrieved in ${Date.now() - sessionStart}ms:`, session ? `Found (${session.user?.email})` : 'None');
         
         if (session) {
           console.log('🔑 Session expires at:', new Date(session.expires_at! * 1000).toLocaleString());
+          console.log('🔑 Session is expired:', session.expires_at! * 1000 < Date.now());
         }
+        
+        if (!mounted) return;
         
         setSession(session);
         setSupabaseUser(session?.user || null);
@@ -132,15 +155,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('👤 User ID from session:', session.user.id);
           const appUser = await fetchAppUser(session.user.id);
           console.log('📦 App user result:', appUser ? `Found (${appUser.email})` : 'null');
-          setUser(appUser);
+          if (mounted) {
+            setUser(appUser);
+          }
         } else {
-          console.log('⚠️ No session user');
+          console.log('⚠️ No session user - checking if we can refresh...');
+          
+          // Try to refresh the session if we have a stored session
+          if (storedSession) {
+            console.log('🔄 Attempting to refresh session...');
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('❌ Refresh failed:', refreshError);
+            } else if (refreshData.session) {
+              console.log('✅ Session refreshed successfully!');
+              if (mounted) {
+                setSession(refreshData.session);
+                setSupabaseUser(refreshData.session.user);
+                const appUser = await fetchAppUser(refreshData.session.user.id);
+                if (appUser && mounted) {
+                  setUser(appUser);
+                }
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('❌ Error initializing auth:', error);
       } finally {
-        setLoading(false);
-        console.log(`✅ initAuth complete in ${Date.now() - startTime}ms`);
+        if (mounted) {
+          setLoading(false);
+          console.log(`✅ initAuth complete in ${Date.now() - startTime}ms`);
+        }
       }
     };
 
@@ -149,7 +196,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('🔔 Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+        
+        // INITIAL_SESSIONは initAuth で処理済みなのでスキップ
+        if (event === 'INITIAL_SESSION') {
+          console.log('Skipping INITIAL_SESSION (already handled)');
+          return;
+        }
         
         setSession(session);
         setSupabaseUser(session?.user || null);
@@ -163,13 +218,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           // 既存のユーザー情報がある場合は保持（fetchAppUserが失敗しても）
           const appUser = await fetchAppUser(session.user.id);
-          if (appUser) {
+          if (appUser && mounted) {
             setUser(appUser);
           } else {
             console.log('fetchAppUser returned null, keeping existing user');
             // 既存のユーザーを保持する（nullで上書きしない）
           }
-        } else {
+        } else if (event === 'SIGNED_OUT') {
+          // 明示的なサインアウトの場合のみユーザーをクリア
+          console.log('User signed out explicitly');
           setUser(null);
         }
 
@@ -178,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
