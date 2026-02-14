@@ -29,10 +29,44 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ユーザーデータをキャッシュするためのキー
+const USER_CACHE_KEY = 'truss-app-user-cache';
+
+// キャッシュからユーザーを取得
+const getCachedUser = (): AppUser | null => {
+  try {
+    const cached = localStorage.getItem(USER_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      console.log('📦 Cached user found:', parsed.email);
+      return parsed;
+    }
+  } catch (e) {
+    console.error('Failed to parse cached user:', e);
+  }
+  return null;
+};
+
+// ユーザーをキャッシュに保存
+const setCachedUser = (user: AppUser | null) => {
+  try {
+    if (user) {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+      console.log('💾 User cached:', user.email);
+    } else {
+      localStorage.removeItem(USER_CACHE_KEY);
+      console.log('🗑️ User cache cleared');
+    }
+  } catch (e) {
+    console.error('Failed to cache user:', e);
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
-  const [user, setUser] = useState<AppUser | null>(null);
+  // キャッシュからユーザーを初期化
+  const [user, setUser] = useState<AppUser | null>(() => getCachedUser());
   const [loading, setLoading] = useState(true);
 
   // Fetch app user from database
@@ -41,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const startTime = Date.now();
     
     try {
-      // Add timeout to detect hanging queries (reduced to 8 seconds)
+      // Add timeout to detect hanging queries (reduced to 15 seconds for cold start)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout after 8s')), 8000);
+        setTimeout(() => reject(new Error('Query timeout after 15s')), 15000);
       });
 
       const queryPromise = supabase
@@ -113,8 +147,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const startTime = Date.now();
       console.log('🚀 initAuth starting...');
       
-      // Check localStorage for stored session
+      // キャッシュがあればすぐにローディングを完了
+      const cachedUser = getCachedUser();
       const storedSession = localStorage.getItem('truss-app-auth');
+      
+      if (cachedUser && storedSession) {
+        console.log('⚡ Using cached user data for instant load');
+        setLoading(false);
+        // バックグラウンドでデータを更新
+      }
+      
       console.log('💾 Stored session in localStorage:', storedSession ? 'Found' : 'Not found');
       
       if (storedSession) {
@@ -155,8 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('👤 User ID from session:', session.user.id);
           const appUser = await fetchAppUser(session.user.id);
           console.log('📦 App user result:', appUser ? `Found (${appUser.email})` : 'null');
-          if (mounted) {
+          if (mounted && appUser) {
             setUser(appUser);
+            setCachedUser(appUser); // キャッシュを更新
           }
         } else {
           console.log('⚠️ No session user - checking if we can refresh...');
@@ -168,6 +211,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (refreshError) {
               console.error('❌ Refresh failed:', refreshError);
+              // リフレッシュ失敗時はキャッシュをクリア
+              setCachedUser(null);
+              if (mounted) {
+                setUser(null);
+              }
             } else if (refreshData.session) {
               console.log('✅ Session refreshed successfully!');
               if (mounted) {
@@ -176,8 +224,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const appUser = await fetchAppUser(refreshData.session.user.id);
                 if (appUser && mounted) {
                   setUser(appUser);
+                  setCachedUser(appUser); // キャッシュを更新
                 }
               }
+            }
+          } else {
+            // セッションがない場合はキャッシュもクリア
+            setCachedUser(null);
+            if (mounted) {
+              setUser(null);
             }
           }
         }
@@ -220,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const appUser = await fetchAppUser(session.user.id);
           if (appUser && mounted) {
             setUser(appUser);
+            setCachedUser(appUser); // キャッシュを更新
           } else {
             console.log('fetchAppUser returned null, keeping existing user');
             // 既存のユーザーを保持する（nullで上書きしない）
@@ -228,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // 明示的なサインアウトの場合のみユーザーをクリア
           console.log('User signed out explicitly');
           setUser(null);
+          setCachedUser(null); // キャッシュもクリア
         }
 
         setLoading(false);
@@ -303,6 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setCachedUser(null); // キャッシュもクリア
   };
 
   // Update user in database
@@ -341,8 +399,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) return { error };
 
-      // Update local state
-      setUser({ ...user, ...updates });
+      // Update local state and cache
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      setCachedUser(updatedUser);
 
       return { error: null };
     } catch (error) {
@@ -356,6 +416,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const appUser = await fetchAppUser(supabaseUser.id);
     setUser(appUser);
+    if (appUser) {
+      setCachedUser(appUser);
+    }
   };
 
   const value: AuthContextType = {
