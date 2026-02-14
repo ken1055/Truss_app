@@ -557,8 +557,8 @@ export function Dashboard({
 
       {/* Bottom Navigation - Hide on messages page */}
       {currentPage !== 'messages' && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-[#F5F1E8] border-t z-50 shadow-lg">
-          <div className="container mx-auto px-4">
+        <nav className="fixed bottom-0 left-0 right-0 bg-[#F5F1E8] border-t z-50 shadow-lg pb-[env(safe-area-inset-bottom)]">
+          <div className="container mx-auto px-4 pb-2">
             <div className="flex justify-around items-end">
               <NavButton
                 icon={<Home className="w-5 h-5" />}

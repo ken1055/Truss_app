@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#FFF7ED"/>
+  
+  <!-- Truss structure -->
+  <g stroke="#F97316" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Main triangle -->
+    <line x1="80" y1="380" x2="256" y2="100"/>
+    <line x1="256" y1="100" x2="432" y2="380"/>
+    <line x1="80" y1="380" x2="432" y2="380"/>
+    
+    <!-- Inner supports -->
+    <line x1="168" y1="240" x2="344" y2="240"/>
+    <line x1="168" y1="240" x2="256" y2="380"/>
+    <line x1="344" y1="240" x2="256" y2="380"/>
+  </g>
+  
+  <!-- Connection dots -->
+  <circle cx="256" cy="100" r="16" fill="#F97316"/>
+  <circle cx="80" cy="380" r="16" fill="#F97316"/>
+  <circle cx="432" cy="380" r="16" fill="#F97316"/>
+  <circle cx="168" cy="240" r="12" fill="#FB923C"/>
+  <circle cx="344" cy="240" r="12" fill="#FB923C"/>
+  <circle cx="256" cy="380" r="12" fill="#FB923C"/>
+</svg>

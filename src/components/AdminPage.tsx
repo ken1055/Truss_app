@@ -186,8 +186,8 @@ export function AdminPage({ user, onLogout, language, onLanguageChange, events, 
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="flex justify-around items-center h-16">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex justify-around items-center h-16 pb-1">
           <button
             onClick={() => setCurrentTab('members')}
             className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
