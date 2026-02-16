@@ -627,7 +627,7 @@ function App() {
   
   const handleDismissNotification = async (notificationId: string) => {
     await dismissNotification(notificationId);
-    toast.success(language === 'ja' ? '通知を削除しました' : 'Notification dismissed');
+    // トーストは表示しない（バッジの減少で十分）
   };
   
   // Event handlers
