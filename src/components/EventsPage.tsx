@@ -42,6 +42,9 @@ const translations = {
     openLine: 'LINEで開く',
     close: '閉じる',
     noLineGroup: 'このイベントにはLINEグループはありません。',
+    confirmRegistration: '参加登録',
+    confirmRegistrationMessage: '以下の内容を確認して、参加登録してください。',
+    registerButton: '参加する',
   },
   en: {
     title: 'Events',
@@ -63,6 +66,9 @@ const translations = {
     openLine: 'Open in LINE',
     close: 'Close',
     noLineGroup: 'This event does not have a LINE group.',
+    confirmRegistration: 'Event Registration',
+    confirmRegistrationMessage: 'Please confirm the following and register.',
+    registerButton: 'Register',
   }
 };
 
@@ -72,6 +78,7 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
   const [lineGroupDialogOpen, setLineGroupDialogOpen] = useState(false);
   const eventRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [photoRefusal, setPhotoRefusal] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState<'confirm' | 'complete'>('confirm');
 
   // Scroll to highlighted event
   useEffect(() => {
@@ -132,25 +139,18 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
     }
   };
 
-  const handleConfirmRegistration = () => {
+  // 「参加する」ボタンを押した時に参加登録を実行
+  const handleRegister = () => {
     if (selectedEvent) {
-      // ダイアログで「閉じる」または「LINEで開くを押した時に参加登録
       onAddEventParticipant(selectedEvent.id, photoRefusal);
       onToggleAttending(selectedEvent.id);
+      setRegistrationStep('complete'); // 完了画面へ
     }
-    handleLineDialogClose();
   };
 
   const handleOpenLineGroup = () => {
-    if (selectedEvent) {
-      // LINEグループを開く前に参加登録
-      onAddEventParticipant(selectedEvent.id, photoRefusal);
-      onToggleAttending(selectedEvent.id);
-      
-      // LINEグループを開く
-      if (selectedEvent.lineGroupLink) {
-        window.open(selectedEvent.lineGroupLink, '_blank');
-      }
+    if (selectedEvent?.lineGroupLink) {
+      window.open(selectedEvent.lineGroupLink, '_blank');
     }
     handleLineDialogClose();
   };
@@ -158,7 +158,8 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
   const handleLineDialogClose = () => {
     setLineGroupDialogOpen(false);
     setSelectedEvent(null);
-    setPhotoRefusal(false); // チェックボックスをリセット
+    setPhotoRefusal(false);
+    setRegistrationStep('confirm'); // 次回のためにリセット
   };
 
   const renderEventCard = (event: Event) => {
@@ -253,58 +254,103 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
 
       <Dialog open={lineGroupDialogOpen} onOpenChange={setLineGroupDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-[#49B1E4]" />
-              {t.registrationComplete}
-            </DialogTitle>
-            <DialogDescription>
-              {t.registrationCompleteMessage}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            {/* 写真拒否チェックボックス */}
-            <div className="flex items-center space-x-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <Checkbox 
-                id="photoRefusal" 
-                checked={photoRefusal}
-                onCheckedChange={(checked) => setPhotoRefusal(checked === true)}
-                className="mt-0"
-              />
-              <label
-                htmlFor="photoRefusal"
-                className="text-sm text-[#3D3D4E] leading-relaxed cursor-pointer"
-              >
-                {t.photoRefusal}
-              </label>
-            </div>
+          {registrationStep === 'confirm' ? (
+            <>
+              {/* ステップ1: 確認画面 */}
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[#49B1E4]" />
+                  {t.confirmRegistration}
+                </DialogTitle>
+                <DialogDescription>
+                  {t.confirmRegistrationMessage}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                {/* イベント情報 */}
+                {selectedEvent && (
+                  <div className="bg-[#F5F1E8] p-4 rounded-lg">
+                    <h3 className="font-medium text-[#3D3D4E] mb-1">
+                      {language === 'ja' ? selectedEvent.title : (selectedEvent.titleEn || selectedEvent.title)}
+                    </h3>
+                    <p className="text-sm text-[#6B6B7A]">{selectedEvent.date} {selectedEvent.time}</p>
+                  </div>
+                )}
 
-            {selectedEvent?.lineGroupLink ? (
-              <>
-                <div className="bg-[#F5F1E8] p-4 rounded-lg">
-                  <p className="text-sm text-[#3D3D4E] text-center mb-2">{t.lineGroupDescription}</p>
+                {/* 写真拒否チェックボックス */}
+                <div className="flex items-start space-x-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                  <Checkbox 
+                    id="photoRefusal" 
+                    checked={photoRefusal}
+                    onCheckedChange={(checked) => setPhotoRefusal(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label
+                    htmlFor="photoRefusal"
+                    className="text-sm text-[#3D3D4E] leading-relaxed cursor-pointer"
+                  >
+                    {t.photoRefusal}
+                  </label>
                 </div>
+
+                {/* 参加するボタン */}
                 <Button
-                  className="w-full bg-[#06C755] hover:bg-[#05B04E] text-white"
-                  onClick={handleOpenLineGroup}
+                  className="w-full bg-[#49B1E4] hover:bg-[#3A9BD4] text-white"
+                  onClick={handleRegister}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {t.openLine}
+                  {t.registerButton}
                 </Button>
-              </>
-            ) : (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-[#6B6B7A] text-center">{t.noLineGroup}</p>
+
+                <Button
+                  variant="ghost"
+                  className="w-full text-[#6B6B7A]"
+                  onClick={handleLineDialogClose}
+                >
+                  {t.close}
+                </Button>
               </div>
-            )}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleConfirmRegistration}
-            >
-              {t.close}
-            </Button>
-          </div>
+            </>
+          ) : (
+            <>
+              {/* ステップ2: 完了画面 */}
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-[#49B1E4]" />
+                  {t.registrationComplete}
+                </DialogTitle>
+                <DialogDescription>
+                  {t.registrationCompleteMessage}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                {selectedEvent?.lineGroupLink ? (
+                  <>
+                    <div className="bg-[#F5F1E8] p-4 rounded-lg">
+                      <p className="text-sm text-[#3D3D4E] text-center">{t.lineGroupDescription}</p>
+                    </div>
+                    <Button
+                      className="w-full bg-[#06C755] hover:bg-[#05B04E] text-white"
+                      onClick={handleOpenLineGroup}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      {t.openLine}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-[#6B6B7A] text-center">{t.noLineGroup}</p>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleLineDialogClose}
+                >
+                  {t.close}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
