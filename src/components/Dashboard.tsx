@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Home, Calendar, Users, Image, Mail, Bell, LogOut, X, Check, Clock, AlertCircle, Upload, FileText, CreditCard } from 'lucide-react';
+import { Home, Calendar, Users, Image, Mail, Bell, LogOut, X, Check, Clock, AlertCircle, Upload, FileText, CreditCard, MessageCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { HomePage } from './HomePage';
 import { EventsPage } from './EventsPage';
 import { MembersPage } from './MembersPage';
@@ -128,6 +129,7 @@ export function Dashboard({
   const [profileOpen, setProfileOpen] = useState(false);
   const [highlightEventId, setHighlightEventId] = useState<number | undefined>(undefined);
   const [messageHistory, setMessageHistory] = useState<MessageHistory>({});
+  const [feePaymentDialogOpen, setFeePaymentDialogOpen] = useState(false);
   const t = translations[language];
 
   // 未読メッセージ数を計算
@@ -513,12 +515,12 @@ export function Dashboard({
                           }
                         </p>
                         {!user.feePaid && (
-                          <p className="text-sm opacity-90 mt-1">
-                            {user.isRenewal 
-                              ? (language === 'ja' ? '¥1,500（継続会員は入会金不要）' : '¥1,500 (No entry fee for renewals)')
-                              : (language === 'ja' ? '¥3,000（入会金¥1,500 + 年会費¥1,500）' : '¥3,000 (Entry ¥1,500 + Annual ¥1,500)')
-                            }
-                          </p>
+                          <button
+                            onClick={() => setFeePaymentDialogOpen(true)}
+                            className="text-sm underline hover:no-underline mt-1"
+                          >
+                            {language === 'ja' ? '支払い手続きへ →' : 'Proceed to payment →'}
+                          </button>
                         )}
                       </div>
                     </div>
@@ -536,7 +538,7 @@ export function Dashboard({
           onOpenProfile={onOpenProfile}
         />
         
-        {currentPage === 'home' && <HomePage language={language} user={user} events={events} onNavigateToEvent={handleNavigateToEvent} onOpenProfile={onOpenProfile} onReopenInitialRegistration={onReopenInitialRegistration} onDismissReuploadNotification={onDismissReuploadNotification} />}
+        {currentPage === 'home' && <HomePage language={language} user={user} events={events} onNavigateToEvent={handleNavigateToEvent} onOpenProfile={onOpenProfile} onReopenInitialRegistration={onReopenInitialRegistration} onDismissReuploadNotification={onDismissReuploadNotification} onOpenFeePayment={() => setFeePaymentDialogOpen(true)} />}
         {currentPage === 'events' && <EventsPage language={language} events={events} attendingEvents={attendingEvents} likedEvents={likedEvents} onToggleAttending={onToggleAttending} onToggleLike={onToggleLike} highlightEventId={highlightEventId} onAddEventParticipant={onAddEventParticipant} user={user} />}
         {currentPage === 'members' && <MembersPage language={language} />}
         {currentPage === 'bulletin' && <BulletinBoard language={language} user={user} onInterested={handleInterested} boardPosts={boardPosts} onUpdateBoardPosts={onUpdateBoardPosts} onCreateBoardPost={onCreateBoardPost} onAddReply={onAddReply} onToggleInterest={onToggleInterest} />}
@@ -601,6 +603,91 @@ export function Dashboard({
           </div>
         </nav>
       )}
+
+      {/* 年会費支払いダイアログ */}
+      <Dialog open={feePaymentDialogOpen} onOpenChange={setFeePaymentDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[#49B1E4]" />
+              {user.isRenewal 
+                ? (language === 'ja' ? '継続手続き' : 'Membership Renewal')
+                : (language === 'ja' ? '入会手続き' : 'Membership Registration')
+              }
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ja' 
+                ? '以下の手順で会費をお支払いください。'
+                : 'Please follow the steps below to pay your membership fee.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* 金額表示 */}
+            <div className="bg-[#F5F1E8] p-4 rounded-lg text-center">
+              <p className="text-sm text-[#6B6B7A] mb-1">
+                {language === 'ja' ? 'お支払い金額' : 'Amount'}
+              </p>
+              <p className="text-3xl font-bold text-[#3D3D4E]">
+                {user.isRenewal ? '¥1,500' : '¥3,000'}
+              </p>
+              <p className="text-xs text-[#6B6B7A] mt-1">
+                {user.isRenewal 
+                  ? (language === 'ja' ? '年会費のみ（継続会員は入会金不要）' : 'Annual fee only (No entry fee for renewals)')
+                  : (language === 'ja' ? '入会金 ¥1,500 + 年会費 ¥1,500' : 'Entry fee ¥1,500 + Annual fee ¥1,500')
+                }
+              </p>
+            </div>
+
+            {/* 支払い方法 */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-[#3D3D4E]">
+                {language === 'ja' ? '支払い方法' : 'Payment Method'}
+              </h4>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <p className="text-sm text-[#3D3D4E]">
+                  {language === 'ja' 
+                    ? '① 運営メンバーに直接お支払いください。'
+                    : '① Please pay directly to a staff member.'
+                  }
+                </p>
+                <p className="text-sm text-[#3D3D4E]">
+                  {language === 'ja' 
+                    ? '② イベント時や対面でお支払いいただけます。'
+                    : '② You can pay at events or in person.'
+                  }
+                </p>
+                <p className="text-sm text-[#3D3D4E]">
+                  {language === 'ja' 
+                    ? '③ 支払い確認後、機能制限が解除されます。'
+                    : '③ After payment confirmation, restrictions will be lifted.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* 運営に連絡ボタン */}
+            <Button
+              className="w-full bg-[#49B1E4] hover:bg-[#3A9BD4] text-white"
+              onClick={() => {
+                setFeePaymentDialogOpen(false);
+                setCurrentPage('notifications');
+              }}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {language === 'ja' ? '運営にメッセージを送る' : 'Message Staff'}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setFeePaymentDialogOpen(false)}
+            >
+              {language === 'ja' ? '閉じる' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

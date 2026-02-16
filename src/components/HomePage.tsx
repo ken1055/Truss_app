@@ -15,6 +15,7 @@ interface HomePageProps {
   onOpenProfile?: () => void;
   onReopenInitialRegistration?: () => void;
   onDismissReuploadNotification?: () => void;
+  onOpenFeePayment?: () => void;
 }
 
 const translations = {
@@ -27,6 +28,11 @@ const translations = {
     reuploadRequired: '学生証の再アップロードが必要です',
     reuploadMessage: '運営から学生証の再アップロード依頼がありました。以下の理由で再提出が必要です。',
     goToRegistration: '新規登録画面へ →',
+    renewalRequired: '継続手続きをお願いします',
+    renewalMessage: '今年度の会費をお支払いいただくと、すべての機能をご利用いただけます。',
+    proceedToPayment: '支払い手続きへ →',
+    newMemberPaymentRequired: '入会手続きをお願いします',
+    newMemberMessage: '入会金と年会費をお支払いいただくと、すべての機能をご利用いただけます。',
   },
   en: {
     welcome: 'Welcome',
@@ -37,10 +43,15 @@ const translations = {
     reuploadRequired: 'Student ID Re-upload Required',
     reuploadMessage: 'The admin has requested a re-upload of your student ID. Please resubmit for the following reason:',
     goToRegistration: 'Go to Registration →',
+    renewalRequired: 'Membership Renewal Required',
+    renewalMessage: 'Please pay your annual fee to unlock all features.',
+    proceedToPayment: 'Proceed to Payment →',
+    newMemberPaymentRequired: 'Registration Required',
+    newMemberMessage: 'Please pay the entry fee and annual fee to unlock all features.',
   }
 };
 
-export function HomePage({ language, user, events, onNavigateToEvent, isProfileComplete, onOpenProfile, onReopenInitialRegistration, onDismissReuploadNotification }: HomePageProps) {
+export function HomePage({ language, user, events, onNavigateToEvent, isProfileComplete, onOpenProfile, onReopenInitialRegistration, onDismissReuploadNotification, onOpenFeePayment }: HomePageProps) {
   const t = translations[language];
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
@@ -193,6 +204,31 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
 
   return (
     <div className="flex flex-col h-full">
+      {/* 継続手続き・入会手続き案内バナー */}
+      {user.category === 'japanese' && !user.feePaid && onOpenFeePayment && (
+        <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white p-4 rounded-xl mb-4 shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold">
+                {user.isRenewal ? t.renewalRequired : t.newMemberPaymentRequired}
+              </h4>
+              <p className="text-sm opacity-90 mt-1">
+                {user.isRenewal ? t.renewalMessage : t.newMemberMessage}
+              </p>
+              <button
+                onClick={onOpenFeePayment}
+                className="mt-2 text-sm font-medium underline hover:no-underline"
+              >
+                {t.proceedToPayment}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Visual - Much larger */}
       <div className="flex-1 min-h-[400px] mb-4">
         <button 
