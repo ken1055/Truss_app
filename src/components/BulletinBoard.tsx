@@ -29,7 +29,9 @@ const translations = {
     createPost: '新しい投稿',
     postTitle: 'タイトル',
     postContent: '内容',
-    wantToLearn: '学びたい言語',
+    tags: 'タグ（任意）',
+    tagsHint: 'よく使うタグを選択、または追加',
+    addCustomTag: 'カスタムタグを追加',
     peopleNeeded: '募集人数',
     uploadImage: '画像をアップロード',
     submit: '投稿する',
@@ -57,7 +59,9 @@ const translations = {
     createPost: 'New Post',
     postTitle: 'Title',
     postContent: 'Content',
-    wantToLearn: 'Language to Learn',
+    tags: 'Tags (optional)',
+    tagsHint: 'Select common tags or add your own',
+    addCustomTag: 'Add custom tag',
     peopleNeeded: 'People Needed',
     uploadImage: 'Upload Image',
     submit: 'Submit',
@@ -81,6 +85,20 @@ const translations = {
   }
 };
 
+// プリセットのタグ
+const presetTags = {
+  ja: [
+    'English', '日本語', '中国語', '韓国語',
+    '友だちが欲しい', '言語交換', '勉強仲間募集', 
+    '単発OK', '定期的に', '初心者歓迎'
+  ],
+  en: [
+    'English', 'Japanese', 'Chinese', 'Korean',
+    'Looking for friends', 'Language Exchange', 'Study Partner',
+    'One-time OK', 'Regular', 'Beginners Welcome'
+  ]
+};
+
 export function BulletinBoard({ language, user, onInterested, boardPosts, onUpdateBoardPosts, onCreateBoardPost, onAddReply, onToggleInterest }: BulletinBoardProps) {
   const t = translations[language];
 
@@ -95,14 +113,37 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [selectedPostForReplies, setSelectedPostForReplies] = useState<number | null>(null);
   const [replyInput, setReplyInput] = useState<Record<number, string>>({});
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [showCustomTagInput, setShowCustomTagInput] = useState(false);
   const [newPost, setNewPost] = useState({
     title: '',
     content: '',
-    language: '',
+    tags: [] as string[],
     peopleNeeded: 1,
     displayType: 'story' as 'story' | 'board',
     expiryDate: '',
   });
+  
+  // タグの追加・削除
+  const toggleTag = (tag: string) => {
+    setNewPost(prev => ({
+      ...prev,
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter(t => t !== tag)
+        : [...prev.tags, tag]
+    }));
+  };
+  
+  const addCustomTag = () => {
+    if (customTagInput.trim() && !newPost.tags.includes(customTagInput.trim())) {
+      setNewPost(prev => ({
+        ...prev,
+        tags: [...prev.tags, customTagInput.trim()]
+      }));
+      setCustomTagInput('');
+      setShowCustomTagInput(false);
+    }
+  };
 
   // ストーリー自動進行
   useEffect(() => {
@@ -241,14 +282,14 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
       authorAvatar: user.name.substring(0, 2).toUpperCase(),
       title: newPost.title,
       content: newPost.content,
-      language: newPost.language,
+      language: newPost.tags.join(', '), // タグをカンマ区切りで保存
       peopleNeeded: newPost.peopleNeeded,
       interested: 0,
       tag: 'languageExchange' as const,
       time: language === 'ja' ? 'たった今' : 'Just now',
       image: previewUrl,
       displayType: newPost.displayType,
-      expiryDate: newPost.expiryDate,
+      expiryDate: newPost.displayType === 'board' ? newPost.expiryDate : '', // ストーリーは期限なし
       isHidden: false,
       isDeleted: false,
     };
@@ -263,7 +304,7 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
       onUpdateBoardPosts([postWithId, ...boardPosts]);
     }
     
-    setNewPost({ title: '', content: '', language: '', peopleNeeded: 1, displayType: 'story', expiryDate: '' });
+    setNewPost({ title: '', content: '', tags: [], peopleNeeded: 1, displayType: 'story', expiryDate: '' });
     setSelectedFile(null);
     setPreviewUrl('');
     setIsDialogOpen(false);
@@ -380,13 +421,76 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="language">{t.wantToLearn}</Label>
-                <Input
-                  id="language"
-                  value={newPost.language}
-                  onChange={(e) => setNewPost({ ...newPost, language: e.target.value })}
-                  placeholder="English, Japanese, etc."
-                />
+                <Label>{t.tags}</Label>
+                <p className="text-xs text-gray-500">{t.tagsHint}</p>
+                {/* 選択済みタグ */}
+                {newPost.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {newPost.tags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-[#49B1E4] text-white text-xs rounded-full"
+                      >
+                        {tag}
+                        <X className="w-3 h-3" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* プリセットタグ */}
+                <div className="flex flex-wrap gap-1">
+                  {presetTags[language].filter(tag => !newPost.tags.includes(tag)).map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                  {/* カスタムタグ追加ボタン */}
+                  {!showCustomTagInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomTagInput(true)}
+                      className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full transition-colors flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      {t.addCustomTag}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 w-full mt-2">
+                      <Input
+                        value={customTagInput}
+                        onChange={(e) => setCustomTagInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomTag())}
+                        placeholder={language === 'ja' ? 'タグを入力...' : 'Enter tag...'}
+                        className="h-7 text-xs"
+                        autoFocus
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addCustomTag}
+                        className="h-7 px-2 bg-[#49B1E4]"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { setShowCustomTagInput(false); setCustomTagInput(''); }}
+                        className="h-7 px-2"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="people-needed">{t.peopleNeeded}</Label>
@@ -439,15 +543,19 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
                   </div>
                 </RadioGroup>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="expiry-date">{t.expiryDate}</Label>
-                <Input
-                  id="expiry-date"
-                  type="date"
-                  value={newPost.expiryDate}
-                  onChange={(e) => setNewPost({ ...newPost, expiryDate: e.target.value })}
-                />
-              </div>
+              {/* 掲示板モードの時のみ表示期限を表示 */}
+              {newPost.displayType === 'board' && (
+                <div className="space-y-2">
+                  <Label htmlFor="expiry-date">{t.expiryDate}</Label>
+                  <Input
+                    id="expiry-date"
+                    type="date"
+                    value={newPost.expiryDate}
+                    onChange={(e) => setNewPost({ ...newPost, expiryDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button onClick={handleCreatePost} className="flex-1 bg-[#49B1E4] hover:bg-[#3A9FD3]">
                   {t.submit}
@@ -581,13 +689,15 @@ export function BulletinBoard({ language, user, onInterested, boardPosts, onUpda
                 <h2 className="text-2xl mb-3">{currentStory.title}</h2>
                 <p className="text-white/90 text-sm mb-4 line-clamp-3">{currentStory.content}</p>
                 
-                <div className="flex items-center gap-4 text-sm mb-4">
+                <div className="flex flex-wrap items-center gap-2 text-sm mb-4">
+                  {/* タグ表示 */}
+                  {currentStory.language && currentStory.language.split(', ').map((tag, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                      {tag}
+                    </span>
+                  ))}
                   <div className="flex items-center gap-1">
-                    <Globe2 className="w-4 h-4" />
-                    <span>{currentStory.language}</span>
-                  </div>
-                  <div>
-                    {currentStory.peopleNeeded} {language === 'ja' ? '人募集' : 'people needed'}
+                    <span>{currentStory.peopleNeeded} {language === 'ja' ? '人募集' : 'people needed'}</span>
                   </div>
                   {currentStory.replies && currentStory.replies.length > 0 && (
                     <div className="flex items-center gap-1">
