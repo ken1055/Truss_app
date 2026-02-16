@@ -206,10 +206,10 @@ export function HomePage({ language, user, events, onNavigateToEvent, isProfileC
     <div className="flex flex-col h-full">
       {/* 継続手続き・入会手続き案内バナー */}
       {user.category === 'japanese' && !user.feePaid && onOpenFeePayment && (
-        <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white p-4 rounded-xl mb-4 shadow-md">
+        <div className="bg-gradient-to-r from-[#3D3D4E] to-[#5A5A6E] text-white p-4 rounded-xl mb-4 shadow-lg border border-[#49B1E4]">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="w-5 h-5" />
+            <div className="w-10 h-10 bg-[#49B1E4] rounded-full flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
               <h4 className="font-bold">

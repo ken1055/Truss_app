@@ -496,7 +496,7 @@ export function Dashboard({
                   {/* 年会費支払い - 日本人学生のみ表示 */}
                   {user.category === 'japanese' && (
                     <div className={`flex items-center gap-3 p-3 rounded-lg ${
-                      user.feePaid ? 'bg-white/20' : 'bg-white/30'
+                      user.feePaid ? 'bg-white/30' : 'bg-yellow-400/90'
                     }`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         user.feePaid ? 'bg-green-500' : 'bg-white'
@@ -504,11 +504,11 @@ export function Dashboard({
                         {user.feePaid ? (
                           <Check className="w-5 h-5 text-white" />
                         ) : (
-                          <CreditCard className="w-5 h-5 text-[#49B1E4]" />
+                          <CreditCard className="w-5 h-5 text-[#3D3D4E]" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">
+                        <p className={`font-medium ${user.feePaid ? 'text-white' : 'text-[#3D3D4E]'}`}>
                           {user.isRenewal 
                             ? (language === 'ja' ? '継続手続き（年会費）' : 'Renewal (Annual Fee)')
                             : (language === 'ja' ? '入会手続き（入会金＋年会費）' : 'Registration (Entry Fee + Annual Fee)')
@@ -517,7 +517,7 @@ export function Dashboard({
                         {!user.feePaid && (
                           <button
                             onClick={() => setFeePaymentDialogOpen(true)}
-                            className="text-sm underline hover:no-underline mt-1"
+                            className="text-sm font-bold text-[#3D3D4E] underline hover:no-underline mt-1"
                           >
                             {language === 'ja' ? '支払い手続きへ →' : 'Proceed to payment →'}
                           </button>
