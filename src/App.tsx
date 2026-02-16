@@ -238,10 +238,26 @@ function App() {
   const [selectedChatUserId, setSelectedChatUserId] = useState<string | null>(null);
   const [adminActiveTab, setAdminActiveTab] = useState<'members' | 'events' | 'boards' | 'chat'>('members');
 
+  // OAuth認証後のURLパラメータをチェック
+  const isOAuthCallback = () => {
+    const hash = window.location.hash;
+    const search = window.location.search;
+    // アクセストークンやコードがURLに含まれている場合はOAuth処理中
+    return hash.includes('access_token') || 
+           hash.includes('error') || 
+           search.includes('code=') ||
+           search.includes('error=');
+  };
+
   // Sync auth user with local user state
   useEffect(() => {
     if (authUser) {
       setUser(authUser);
+      
+      // OAuth処理後、URLをクリーンアップ
+      if (isOAuthCallback()) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       
       // Navigate based on user state
       if (authUser.isAdmin) {
@@ -260,8 +276,12 @@ function App() {
         setCurrentPage('dashboard');
       }
     } else if (!authLoading && !session) {
+      // OAuth処理中の場合はランディングページへのリダイレクトを防ぐ
+      if (isOAuthCallback()) {
+        console.log('🔄 OAuth callback detected, waiting for session...');
+        return;
+      }
       // セッションがない場合のみランディングページへ
-      // セッションがあるがユーザーデータがまだの場合は待機
       setUser(null);
       setCurrentPage('landing');
     }
