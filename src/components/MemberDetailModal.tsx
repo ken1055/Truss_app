@@ -39,10 +39,15 @@ const translations = {
     japanese: '日本人学生・国内学生',
     regularInternational: '正規留学生',
     exchange: '交換留学生',
-    feeStatus: '年会費',
+    feeStatus: '会費状況',
     feePaid: '支払い済み',
     feeUnpaid: '未払い',
     confirmFeePayment: '支払い確認',
+    renewal: '継続会員',
+    newMember: '新規会員',
+    renewalFee: '¥1,500（年会費のみ）',
+    newMemberFee: '¥3,000（入会金+年会費）',
+    membershipYear: '会員年度',
   },
   en: {
     applicationDate: 'Application Date',
@@ -65,10 +70,15 @@ const translations = {
     japanese: 'Japanese Student',
     regularInternational: 'Regular International',
     exchange: 'Exchange Student',
-    feeStatus: 'Annual Fee',
+    feeStatus: 'Fee Status',
     feePaid: 'Paid',
     feeUnpaid: 'Unpaid',
     confirmFeePayment: 'Confirm Payment',
+    renewal: 'Renewal',
+    newMember: 'New Member',
+    renewalFee: '¥1,500 (Annual fee only)',
+    newMemberFee: '¥3,000 (Entry + Annual)',
+    membershipYear: 'Membership Year',
   }
 };
 
@@ -231,20 +241,35 @@ export function MemberDetailModal({
             {user.category === 'japanese' && !isPending && (
               <div className="col-span-2">
                 <p className="text-[#4A5565] text-sm tracking-[-0.1504px] mb-2">{t.feeStatus}</p>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Badge className={`${user.feePaid ? 'bg-[#00A63E] text-white' : 'bg-[#D4183D] text-white'} border-0 font-medium text-xs px-3 py-1`}>
                     {user.feePaid ? t.feePaid : t.feeUnpaid}
                   </Badge>
-                  {!user.feePaid && onConfirmFeePayment && (
-                    <Button
-                      onClick={onConfirmFeePayment}
-                      className="bg-[#00A63E] hover:bg-[#008C35] text-white h-8 px-4 text-sm"
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      {t.confirmFeePayment}
-                    </Button>
+                  <Badge className={`${user.isRenewal ? 'bg-[#49B1E4] text-white' : 'bg-[#8B5CF6] text-white'} border-0 font-medium text-xs px-3 py-1`}>
+                    {user.isRenewal ? t.renewal : t.newMember}
+                  </Badge>
+                  {user.membershipYear && (
+                    <span className="text-xs text-[#6B6B7A]">
+                      {t.membershipYear}: {user.membershipYear}
+                    </span>
                   )}
                 </div>
+                {!user.feePaid && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[#6B6B7A]">
+                      {user.isRenewal ? t.renewalFee : t.newMemberFee}
+                    </span>
+                    {onConfirmFeePayment && (
+                      <Button
+                        onClick={onConfirmFeePayment}
+                        className="bg-[#00A63E] hover:bg-[#008C35] text-white h-8 px-4 text-sm"
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        {t.confirmFeePayment}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -129,6 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initialRegistered: data.initial_registered,
         profileCompleted: data.profile_completed,
         feePaid: data.fee_paid,
+        membershipYear: data.membership_year || undefined,
+        isRenewal: data.is_renewal || false,
         studentIdReuploadRequested: data.student_id_reupload_requested,
         reuploadReason: data.reupload_reason || undefined,
         requestedAt: data.requested_at || undefined,

@@ -507,11 +507,17 @@ export function Dashboard({
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">
-                          {language === 'ja' ? '年会費の支払い' : 'Annual Fee Payment'}
+                          {user.isRenewal 
+                            ? (language === 'ja' ? '継続手続き（年会費）' : 'Renewal (Annual Fee)')
+                            : (language === 'ja' ? '入会手続き（入会金＋年会費）' : 'Registration (Entry Fee + Annual Fee)')
+                          }
                         </p>
                         {!user.feePaid && (
                           <p className="text-sm opacity-90 mt-1">
-                            {language === 'ja' ? '¥3,000（デモ版では自動的に完了します）' : '¥3,000 (Auto-completed in demo)'}
+                            {user.isRenewal 
+                              ? (language === 'ja' ? '¥1,500（継続会員は入会金不要）' : '¥1,500 (No entry fee for renewals)')
+                              : (language === 'ja' ? '¥3,000（入会金¥1,500 + 年会費¥1,500）' : '¥3,000 (Entry ¥1,500 + Annual ¥1,500)')
+                            }
                           </p>
                         )}
                       </div>

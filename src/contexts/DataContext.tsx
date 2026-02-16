@@ -37,7 +37,9 @@ interface DataContextType {
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
   requestReupload: (userId: string, reason: string) => Promise<void>;
-  confirmFeePayment: (userId: string) => Promise<void>;
+  confirmFeePayment: (userId: string, isRenewal?: boolean) => Promise<void>;
+  confirmRenewal: (userId: string) => Promise<void>;
+  resetMembershipForNewYear: () => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   
   // Message methods
@@ -188,6 +190,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         initialRegistered: u.initial_registered,
         profileCompleted: u.profile_completed,
         feePaid: u.fee_paid,
+        membershipYear: u.membership_year || undefined,
+        isRenewal: u.is_renewal || false,
         studentIdReuploadRequested: u.student_id_reupload_requested,
         reuploadReason: u.reupload_reason || undefined,
         requestedAt: u.requested_at || undefined,
@@ -877,14 +881,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // 年会費支払い確認（管理者用）
-  const confirmFeePayment = async (userId: string) => {
+  const confirmFeePayment = async (userId: string, isRenewal: boolean = false) => {
     try {
-      console.log('Confirming fee payment for user:', userId);
+      console.log('Confirming fee payment for user:', userId, 'isRenewal:', isRenewal);
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      // 4月以降は現在の年度、3月以前は前年度
+      const membershipYear = currentMonth >= 4 ? currentYear : currentYear - 1;
+
       const { error } = await supabase
         .from('users')
         .update({
           fee_paid: true,
           registration_step: 'fully_active',
+          membership_year: membershipYear,
+          is_renewal: isRenewal,
         })
         .eq('id', userId);
 
@@ -896,6 +907,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await fetchUsers();
     } catch (error) {
       console.error('Error confirming fee payment:', error);
+    }
+  };
+
+  // 継続手続き確認（管理者用）
+  const confirmRenewal = async (userId: string) => {
+    await confirmFeePayment(userId, true);
+  };
+
+  // 新年度の会員資格リセット（管理者用 - 4月に実行）
+  const resetMembershipForNewYear = async () => {
+    try {
+      console.log('Resetting membership for new year...');
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      const newMembershipYear = currentMonth >= 4 ? currentYear : currentYear - 1;
+
+      // 前年度以前の会員のfee_paidをfalseにリセット
+      const { error } = await supabase
+        .from('users')
+        .update({
+          fee_paid: false,
+          is_renewal: true, // 既存会員なので継続扱い
+        })
+        .lt('membership_year', newMembershipYear)
+        .eq('fee_paid', true);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log('Membership reset successfully');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error resetting membership:', error);
     }
   };
 
@@ -1352,6 +1397,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     rejectUser,
     requestReupload,
     confirmFeePayment,
+    confirmRenewal,
+    resetMembershipForNewYear,
     deleteUser,
     sendMessage,
     sendBroadcast,

@@ -53,6 +53,8 @@ export interface User {
   initialRegistered: boolean;
   profileCompleted: boolean;
   feePaid: boolean;
+  membershipYear?: number; // 会員登録年度（例: 2025）
+  isRenewal?: boolean; // 継続会員かどうか（入会金不要）
   studentIdReuploadRequested?: boolean;
   reuploadReason?: string;
   requestedAt?: string;

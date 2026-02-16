@@ -57,6 +57,8 @@ export interface DbUser {
   initial_registered: boolean;
   profile_completed: boolean;
   fee_paid: boolean;
+  membership_year: number | null;
+  is_renewal: boolean;
   student_id_reupload_requested: boolean;
   reupload_reason: string | null;
   requested_at: string | null;
