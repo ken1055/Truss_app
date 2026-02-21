@@ -15,11 +15,12 @@ interface AdminMembersManagementProps {
   onRequestReupload?: (userId: string, reasons?: string[]) => void;
   onOpenChat?: (userId: string) => void;
   onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
-  onConfirmFeePayment?: (userId: string) => void;
+  onConfirmFeePayment?: (userId: string, isRenewal: boolean) => void;
+  onSetRenewalStatus?: (userId: string, isRenewal: boolean) => void;
   onDeleteUser?: (userId: string) => void;
 }
 
-export function AdminMembersManagement({ language, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onDeleteUser }: AdminMembersManagementProps) {
+export function AdminMembersManagement({ language, pendingUsers, approvedMembers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onSetRenewalStatus, onDeleteUser }: AdminMembersManagementProps) {
   return (
     <AdminMembers 
       language={language} 
@@ -31,6 +32,7 @@ export function AdminMembersManagement({ language, pendingUsers, approvedMembers
       onOpenChat={onOpenChat}
       onSendBulkEmail={onSendBulkEmail}
       onConfirmFeePayment={onConfirmFeePayment}
+      onSetRenewalStatus={onSetRenewalStatus}
       onDeleteUser={onDeleteUser}
     />
   );

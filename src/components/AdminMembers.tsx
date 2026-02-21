@@ -23,7 +23,8 @@ interface AdminMembersProps {
   onRequestReupload?: (userId: string, reasons?: string[]) => void;
   onOpenChat?: (userId: string) => void;
   onSendBulkEmail?: (userIds: string[], subjectJa: string, subjectEn: string, messageJa: string, messageEn: string, sendInApp: boolean, sendEmail: boolean) => void;
-  onConfirmFeePayment?: (userId: string) => void;
+  onConfirmFeePayment?: (userId: string, isRenewal: boolean) => void;
+  onSetRenewalStatus?: (userId: string, isRenewal: boolean) => void;
   onDeleteUser?: (userId: string) => void;
 }
 
@@ -64,7 +65,7 @@ const translations = {
   }
 };
 
-export function AdminMembers({ language, approvedMembers, pendingUsers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onDeleteUser }: AdminMembersProps) {
+export function AdminMembers({ language, approvedMembers, pendingUsers, onApproveUser, onRejectUser, onRequestReupload, onOpenChat, onSendBulkEmail, onConfirmFeePayment, onSetRenewalStatus, onDeleteUser }: AdminMembersProps) {
   const t = translations[language];
   const [activeTab, setActiveTab] = useState<'approved' | 'pending'>('approved');
   const [searchQuery, setSearchQuery] = useState('');
@@ -686,12 +687,21 @@ export function AdminMembers({ language, approvedMembers, pendingUsers, onApprov
             toast.success(language === 'ja' ? 'メンバーを削除しました' : 'Member deleted successfully');
             setShowDetailModal(false);
           }}
-          onConfirmFeePayment={() => {
+          onConfirmFeePayment={(isRenewal: boolean) => {
             if (onConfirmFeePayment) {
-              onConfirmFeePayment(selectedUser.id);
+              onConfirmFeePayment(selectedUser.id, isRenewal);
             }
-            toast.success(language === 'ja' ? '年会費の支払いを確認しました' : 'Fee payment confirmed');
+            const feeAmount = isRenewal ? '¥1,500' : '¥3,000';
+            toast.success(language === 'ja' ? `年会費（${feeAmount}）の支払いを確認しました` : `Fee payment (${feeAmount}) confirmed`);
             setShowDetailModal(false);
+          }}
+          onSetRenewalStatus={(isRenewal: boolean) => {
+            if (onSetRenewalStatus) {
+              onSetRenewalStatus(selectedUser.id, isRenewal);
+            }
+            toast.success(language === 'ja' 
+              ? (isRenewal ? '継続会員に設定しました' : '新規会員に設定しました')
+              : (isRenewal ? 'Set as renewal member' : 'Set as new member'));
           }}
         />
       )}

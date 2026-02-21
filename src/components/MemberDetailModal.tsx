@@ -14,7 +14,8 @@ interface MemberDetailModalProps {
   onApprove?: () => void;
   onReject?: () => void;
   onDelete?: () => void;
-  onConfirmFeePayment?: () => void;
+  onConfirmFeePayment?: (isRenewal: boolean) => void;
+  onSetRenewalStatus?: (isRenewal: boolean) => void;
 }
 
 const translations = {
@@ -48,6 +49,12 @@ const translations = {
     renewalFee: '¥1,500（年会費のみ）',
     newMemberFee: '¥3,000（入会金+年会費）',
     membershipYear: '会員年度',
+    paymentOptions: '支払いを確認する',
+    confirmAsRenewal: '継続として確認（¥1,500）',
+    confirmAsNew: '新規として確認（¥3,000）',
+    setAsRenewal: '継続会員に設定',
+    setAsNew: '新規会員に設定',
+    memberTypeHint: '※3/31までに登録完了した会員は「継続」扱い',
   },
   en: {
     applicationDate: 'Application Date',
@@ -79,6 +86,12 @@ const translations = {
     renewalFee: '¥1,500 (Annual fee only)',
     newMemberFee: '¥3,000 (Entry + Annual)',
     membershipYear: 'Membership Year',
+    paymentOptions: 'Confirm Payment',
+    confirmAsRenewal: 'Confirm as Renewal (¥1,500)',
+    confirmAsNew: 'Confirm as New (¥3,000)',
+    setAsRenewal: 'Set as Renewal',
+    setAsNew: 'Set as New Member',
+    memberTypeHint: '* Members registered by 3/31 are treated as "Renewal"',
   }
 };
 
@@ -91,10 +104,12 @@ export function MemberDetailModal({
   onApprove,
   onReject,
   onDelete,
-  onConfirmFeePayment
+  onConfirmFeePayment,
+  onSetRenewalStatus
 }: MemberDetailModalProps) {
   const t = translations[language];
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
 
   if (!isOpen) return null;
 
@@ -254,20 +269,70 @@ export function MemberDetailModal({
                     </span>
                   )}
                 </div>
+                
+                {/* 会員種別変更ボタン（支払い前のみ） */}
+                {!user.feePaid && onSetRenewalStatus && (
+                  <div className="flex gap-2 mb-3">
+                    <Button
+                      onClick={() => onSetRenewalStatus(true)}
+                      variant={user.isRenewal ? "default" : "outline"}
+                      className={`h-7 px-3 text-xs ${user.isRenewal ? 'bg-[#49B1E4] hover:bg-[#3A9FD3]' : ''}`}
+                    >
+                      {t.setAsRenewal}
+                    </Button>
+                    <Button
+                      onClick={() => onSetRenewalStatus(false)}
+                      variant={!user.isRenewal ? "default" : "outline"}
+                      className={`h-7 px-3 text-xs ${!user.isRenewal ? 'bg-[#8B5CF6] hover:bg-[#7C3AED]' : ''}`}
+                    >
+                      {t.setAsNew}
+                    </Button>
+                  </div>
+                )}
+                
                 {!user.feePaid && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-[#6B6B7A]">
-                      {user.isRenewal ? t.renewalFee : t.newMemberFee}
-                    </span>
-                    {onConfirmFeePayment && (
-                      <Button
-                        onClick={onConfirmFeePayment}
-                        className="bg-[#00A63E] hover:bg-[#008C35] text-white h-8 px-4 text-sm"
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        {t.confirmFeePayment}
-                      </Button>
-                    )}
+                  <div className="space-y-2">
+                    <p className="text-xs text-[#6B6B7A]">{t.memberTypeHint}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-[#6B6B7A]">
+                        {user.isRenewal ? t.renewalFee : t.newMemberFee}
+                      </span>
+                      {onConfirmFeePayment && (
+                        <>
+                          {!showPaymentOptions ? (
+                            <Button
+                              onClick={() => setShowPaymentOptions(true)}
+                              className="bg-[#00A63E] hover:bg-[#008C35] text-white h-8 px-4 text-sm"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              {t.confirmFeePayment}
+                            </Button>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                onClick={() => { onConfirmFeePayment(true); setShowPaymentOptions(false); }}
+                                className="bg-[#49B1E4] hover:bg-[#3A9FD3] text-white h-8 px-3 text-xs"
+                              >
+                                {t.confirmAsRenewal}
+                              </Button>
+                              <Button
+                                onClick={() => { onConfirmFeePayment(false); setShowPaymentOptions(false); }}
+                                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white h-8 px-3 text-xs"
+                              >
+                                {t.confirmAsNew}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => setShowPaymentOptions(false)}
+                                className="h-8 px-2 text-xs"
+                              >
+                                {t.cancel}
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

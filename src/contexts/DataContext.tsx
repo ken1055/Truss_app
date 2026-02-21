@@ -39,6 +39,7 @@ interface DataContextType {
   requestReupload: (userId: string, reason: string) => Promise<void>;
   confirmFeePayment: (userId: string, isRenewal?: boolean) => Promise<void>;
   confirmRenewal: (userId: string) => Promise<void>;
+  setRenewalStatus: (userId: string, isRenewal: boolean) => Promise<void>;
   resetMembershipForNewYear: () => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   
@@ -915,6 +916,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await confirmFeePayment(userId, true);
   };
 
+  // 継続/新規ステータスを変更（管理者用）
+  const setRenewalStatus = async (userId: string, isRenewal: boolean) => {
+    try {
+      console.log('Setting renewal status for user:', userId, 'isRenewal:', isRenewal);
+      const { error } = await supabase
+        .from('users')
+        .update({ is_renewal: isRenewal })
+        .eq('id', userId);
+
+      if (error) throw error;
+      console.log('Renewal status updated successfully');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error setting renewal status:', error);
+    }
+  };
+
   // 新年度の会員資格リセット（管理者用 - 4月に実行）
   const resetMembershipForNewYear = async () => {
     try {
@@ -1398,6 +1416,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     requestReupload,
     confirmFeePayment,
     confirmRenewal,
+    setRenewalStatus,
     resetMembershipForNewYear,
     deleteUser,
     sendMessage,
