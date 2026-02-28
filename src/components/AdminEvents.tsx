@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
-import { Plus, X, Upload, Calendar as CalendarIcon, Clock, MapPin, Users, Mail, Edit2, Languages, Save, Trash2 } from 'lucide-react';
+import { Plus, X, Upload, Calendar as CalendarIcon, Clock, MapPin, Users, Mail, Edit2, Languages, Save, Trash2, Heart } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import type { Language, Event, EventParticipant } from '../App';
 import imgEventSample from 'figma:asset/c4e8899bf782af1b6b9889d032b63d8a0c141f8b.png';
@@ -879,9 +879,16 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
               )}
 
               {/* 説明 */}
-              <p className="text-[#3D3D4E] text-sm leading-relaxed">
-                {language === 'ja' ? selectedEvent.descriptionJa : selectedEvent.descriptionEn}
-              </p>
+              <div className="bg-[#F9FAFB] rounded-lg p-4">
+                <h4 className="text-[#3D3D4E] text-sm font-semibold mb-2">
+                  {language === 'ja' ? 'イベント説明' : 'Event Description'}
+                </h4>
+                <p className="text-[#3D3D4E] text-sm leading-relaxed whitespace-pre-wrap">
+                  {language === 'ja' 
+                    ? (selectedEvent.descriptionJa || '説明文がありません') 
+                    : (selectedEvent.descriptionEn || selectedEvent.descriptionJa || 'No description')}
+                </p>
+              </div>
 
               {/* イベント情報 */}
               <div className="space-y-2">
@@ -920,6 +927,14 @@ export function AdminEvents({ language, events: propsEvents, eventParticipants, 
                     {selectedEvent.currentParticipants} / {selectedEvent.maxParticipants}
                   </span>
                   <span>{language === 'ja' ? '参加者' : 'Participants'}</span>
+                </div>
+                {/* いいね数 */}
+                <div className="flex items-center gap-2 text-[#3D3D4E] text-sm">
+                  <Heart className="w-4 h-4 text-red-500" />
+                  <span className="font-semibold text-red-500">
+                    {selectedEvent.likes || 0}
+                  </span>
+                  <span>{language === 'ja' ? 'いいね' : 'Likes'}</span>
                 </div>
               </div>
             </div>
