@@ -691,7 +691,7 @@ export function AdminMembers({ language, approvedMembers, pendingUsers, onApprov
             if (onConfirmFeePayment) {
               onConfirmFeePayment(selectedUser.id, isRenewal);
             }
-            const feeAmount = isRenewal ? '¥1,500' : '¥3,000';
+            const feeAmount = isRenewal ? '¥2,000' : '¥2,500';
             toast.success(language === 'ja' ? `年会費（${feeAmount}）の支払いを確認しました` : `Fee payment (${feeAmount}) confirmed`);
             setShowDetailModal(false);
           }}

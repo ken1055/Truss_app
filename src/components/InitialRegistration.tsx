@@ -543,12 +543,19 @@ export function InitialRegistration({ language, onLanguageChange, email, onCompl
 
             <div className="space-y-2" ref={studentNumberRef}>
               <Label htmlFor="studentNumber">{t.studentNumberLabel}</Label>
+              <p className="text-xs text-gray-500">
+                {language === 'ja' ? '※半角英数字で入力してください' : '※ Please enter in half-width alphanumeric characters'}
+              </p>
               <Input
                 id="studentNumber"
                 placeholder={t.studentNumberPlaceholder}
                 value={formData.studentNumber}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  // 全角を半角に変換
+                  const value = e.target.value
+                    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                    .replace(/[－]/g, '-')
+                    .toUpperCase();
                   setFormData({ ...formData, studentNumber: value });
                   // 入力中はエラーをクリア
                   setStudentNumberError('');

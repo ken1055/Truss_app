@@ -629,12 +629,12 @@ export function Dashboard({
                 {language === 'ja' ? 'お支払い金額' : 'Amount'}
               </p>
               <p className="text-3xl font-bold text-[#3D3D4E]">
-                {user.isRenewal ? '¥1,500' : '¥3,000'}
+                {user.isRenewal ? '¥2,000' : '¥2,500'}
               </p>
               <p className="text-xs text-[#6B6B7A] mt-1">
                 {user.isRenewal 
                   ? (language === 'ja' ? '年会費のみ（継続会員は入会金不要）' : 'Annual fee only (No entry fee for renewals)')
-                  : (language === 'ja' ? '入会金 ¥1,500 + 年会費 ¥1,500' : 'Entry fee ¥1,500 + Annual fee ¥1,500')
+                  : (language === 'ja' ? '入会金 ¥500 + 年会費 ¥2,000' : 'Entry fee ¥500 + Annual fee ¥2,000')
                 }
               </p>
             </div>
@@ -642,25 +642,29 @@ export function Dashboard({
             {/* 支払い方法 */}
             <div className="space-y-3">
               <h4 className="font-medium text-[#3D3D4E]">
-                {language === 'ja' ? '支払い方法' : 'Payment Method'}
+                {language === 'ja' ? '支払い方法（銀行振込）' : 'Payment Method (Bank Transfer)'}
               </h4>
               <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="text-sm text-[#3D3D4E] space-y-1">
+                  <p className="font-medium">{language === 'ja' ? '【振込先】' : '【Bank Account】'}</p>
+                  <p>{language === 'ja' ? '銀行名：〇〇銀行' : 'Bank: XX Bank'}</p>
+                  <p>{language === 'ja' ? '支店名：〇〇支店' : 'Branch: XX Branch'}</p>
+                  <p>{language === 'ja' ? '口座種別：普通' : 'Account Type: Savings'}</p>
+                  <p>{language === 'ja' ? '口座番号：1234567' : 'Account No: 1234567'}</p>
+                  <p>{language === 'ja' ? '口座名義：トラス' : 'Account Name: TRUSS'}</p>
+                </div>
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <p className="text-xs text-[#6B6B7A]">
+                    {language === 'ja' 
+                      ? '※振込名義は「学籍番号＋氏名」でお願いします'
+                      : '※ Please use "Student ID + Name" as the transfer name'
+                    }
+                  </p>
+                </div>
                 <p className="text-sm text-[#3D3D4E]">
                   {language === 'ja' 
-                    ? '① 運営メンバーに直接お支払いください。'
-                    : '① Please pay directly to a staff member.'
-                  }
-                </p>
-                <p className="text-sm text-[#3D3D4E]">
-                  {language === 'ja' 
-                    ? '② イベント時や対面でお支払いいただけます。'
-                    : '② You can pay at events or in person.'
-                  }
-                </p>
-                <p className="text-sm text-[#3D3D4E]">
-                  {language === 'ja' 
-                    ? '③ 支払い確認後、機能制限が解除されます。'
-                    : '③ After payment confirmation, restrictions will be lifted.'
+                    ? '振込確認後、機能制限が解除されます。'
+                    : 'After payment confirmation, restrictions will be lifted.'
                   }
                 </p>
               </div>

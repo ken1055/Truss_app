@@ -212,7 +212,7 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
       </div>
 
       {/* Profile Header with Background Image and Avatar */}
-      <div className="relative h-[250px] md:h-[400px] rounded-2xl overflow-hidden shadow-lg bg-[#F5F1E8]">
+      <div className="relative h-[120px] md:h-[150px] rounded-xl overflow-hidden shadow-md bg-[#F5F1E8]">
         {/* Background Image */}
         <ImageWithFallback
           src={trussImage}
@@ -222,13 +222,13 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
         />
         
         {/* Barcode Overlay - Top Right */}
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 md:p-3">
+        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-1.5 md:p-2">
           <Barcode 
             value={user.id || 'TRUSS000'} 
-            width={1.5}
-            height={45}
+            width={1}
+            height={30}
             displayValue={false}
-            className="w-24 h-auto md:w-32"
+            className="w-16 h-auto md:w-20"
           />
         </div>
       </div>
@@ -366,11 +366,23 @@ export function ProfilePage({ language, user, isCompact = false, isProfileComple
               <div>
                 <Label className="text-gray-600 text-sm mb-1">{t.studentNumber}</Label>
                 {isEditing ? (
-                  <Input
-                    value={editedUser.studentNumber}
-                    onChange={(e) => setEditedUser({ ...editedUser, studentNumber: e.target.value })}
-                    autoComplete="off"
-                  />
+                  <>
+                    <p className="text-xs text-gray-500 mb-1">
+                      {language === 'ja' ? '※半角英数字で入力' : '※ Half-width only'}
+                    </p>
+                    <Input
+                      value={editedUser.studentNumber}
+                      onChange={(e) => {
+                        // 全角を半角に変換
+                        const value = e.target.value
+                          .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                          .replace(/[－]/g, '-')
+                          .toUpperCase();
+                        setEditedUser({ ...editedUser, studentNumber: value });
+                      }}
+                      autoComplete="off"
+                    />
+                  </>
                 ) : (
                   <div className="flex items-center gap-2 mt-1">
                     <IdCard className="w-4 h-4 text-gray-400" />
