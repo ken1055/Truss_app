@@ -168,22 +168,12 @@ export function MemberDetailModal({
                 {t.applicationDate}: 2026-01-13
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {!isPending && onDelete && (
-                <Button
-                  onClick={handleDeleteClick}
-                  className="bg-[#D4183D] hover:bg-[#B01432] text-white h-9 px-4"
-                >
-                  {t.delete}
-                </Button>
-              )}
-              <button
+            <button
                 onClick={onClose}
-                className="text-[#3D3D4E] hover:text-[#1a1a24] transition-colors opacity-70"
+                className="text-[#3D3D4E] hover:text-[#1a1a24] transition-colors opacity-70 p-2 hover:bg-gray-200 rounded-full"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
-            </div>
           </div>
         </div>
 
@@ -355,6 +345,20 @@ export function MemberDetailModal({
               >
                 <XCircle className="w-4 h-4" />
                 <span className="font-medium text-sm tracking-[-0.1504px]">{t.reject}</span>
+              </Button>
+            </div>
+          )}
+
+          {/* 削除ボタン（承認済みメンバーのみ、モーダル下部に配置） */}
+          {!isPending && onDelete && (
+            <div className="mt-8 pt-6 border-t border-[rgba(61,61,78,0.15)]">
+              <Button
+                onClick={handleDeleteClick}
+                variant="outline"
+                className="w-full border-[#D4183D] text-[#D4183D] hover:bg-[#D4183D] hover:text-white h-10"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t.delete}
               </Button>
             </div>
           )}
