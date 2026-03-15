@@ -22,7 +22,6 @@ const translations = {
     passwordPlaceholder: 'パスワードを入力',
     loginButton: 'ログイン',
     back: '戻る',
-    demoNote: 'デモ用：admin@truss.com / password',
   },
   en: {
     title: 'Admin Login',
@@ -33,7 +32,6 @@ const translations = {
     passwordPlaceholder: 'Enter password',
     loginButton: 'Login',
     back: 'Back',
-    demoNote: 'Demo: admin@truss.com / password',
   }
 };
 
@@ -91,10 +89,6 @@ export function AdminLogin({ language, onLogin, onBack }: AdminLoginProps) {
                   placeholder={t.passwordPlaceholder}
                   required
                 />
-              </div>
-
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-blue-800">{t.demoNote}</p>
               </div>
 
               <Button type="submit" className="w-full bg-[#49B1E4] hover:bg-[#3A9FD3]">

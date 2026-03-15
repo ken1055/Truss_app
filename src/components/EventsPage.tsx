@@ -184,7 +184,15 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
             />
           </div>
           <CardContent className="pt-3 pb-3 px-3 sm:px-6">
-            <h3 className="text-[#3D3D4E] mb-2 text-sm sm:text-base">{displayTitle}</h3>
+            <h3 className="text-[#3D3D4E] mb-2 text-sm sm:text-base font-semibold">{displayTitle}</h3>
+            {/* イベント説明文 */}
+            {(event.description || event.descriptionJa) && (
+              <p className="text-xs sm:text-sm text-[#6B6B7A] mb-3 line-clamp-3">
+                {language === 'ja' 
+                  ? (event.descriptionJa || event.description) 
+                  : (event.descriptionEn || event.descriptionJa || event.description)}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-[#6B6B7A] mb-2">
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -221,7 +229,7 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
               </button>
               <div className="flex items-center gap-1 text-blue-600">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm">{event.currentParticipants} {t.participants}</span>
+                <span className="text-xs sm:text-sm">{event.currentParticipants}/{event.maxParticipants} {t.participants}</span>
               </div>
             </div>
             {event.status === 'upcoming' && (
