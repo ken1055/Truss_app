@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Heart, Users, Calendar, Camera, MapPin, Clock, MessageCircle, ExternalLink } from 'lucide-react';
+import { Heart, Users, Calendar, Camera, MapPin, Clock, MessageCircle, ExternalLink, X, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Checkbox } from './ui/checkbox';
 import type { Language, Event } from '../App';
@@ -45,6 +45,10 @@ const translations = {
     confirmRegistration: '参加登録',
     confirmRegistrationMessage: '以下の内容を確認して、参加登録してください。',
     registerButton: '参加する',
+    eventDetails: 'イベント詳細',
+    description: '説明',
+    noDescription: '説明はありません',
+    viewDetails: '詳細を見る',
   },
   en: {
     title: 'Events',
@@ -69,6 +73,10 @@ const translations = {
     confirmRegistration: 'Event Registration',
     confirmRegistrationMessage: 'Please confirm the following and register.',
     registerButton: 'Register',
+    eventDetails: 'Event Details',
+    description: 'Description',
+    noDescription: 'No description available',
+    viewDetails: 'View Details',
   }
 };
 
@@ -76,6 +84,8 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
   const t = translations[language];
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [lineGroupDialogOpen, setLineGroupDialogOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<Event | null>(null);
   const eventRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [photoRefusal, setPhotoRefusal] = useState(false);
   const [registrationStep, setRegistrationStep] = useState<'confirm' | 'complete'>('confirm');
@@ -162,6 +172,21 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
     setRegistrationStep('confirm'); // 次回のためにリセット
   };
 
+  const handleOpenDetail = (event: Event) => {
+    setDetailEvent(event);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setDetailEvent(null);
+  };
+
+  const handleAttendFromDetail = (event: Event) => {
+    handleCloseDetail();
+    handleAttendClick(event);
+  };
+
   const renderEventCard = (event: Event) => {
     const isLiked = likedEvents.has(event.id);
     const isAttending = attendingEvents.has(event.id);
@@ -175,14 +200,22 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
         ref={(el) => { eventRefs.current[event.id] = el; }}
       >
         <Card className={`overflow-hidden hover:shadow-lg transition-all duration-500 ${isHighlighted ? 'ring-4 ring-[#49B1E4] shadow-2xl' : ''}`}>
-          <div className="h-48 sm:h-72 bg-gradient-to-br from-blue-100 to-purple-100 relative">
+          <button 
+            onClick={() => handleOpenDetail(event)}
+            className="w-full h-48 sm:h-72 bg-gradient-to-br from-blue-100 to-purple-100 relative cursor-pointer group"
+          >
             <img 
               src={event.image} 
               alt={displayTitle}
               loading="lazy"
               className="w-full h-full object-cover"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
+                <Info className="w-6 h-6 text-[#49B1E4]" />
+              </div>
+            </div>
+          </button>
           <CardContent className="pt-3 pb-3 px-3 sm:px-6">
             <h3 className="text-[#3D3D4E] mb-2 text-sm sm:text-base font-semibold">{displayTitle}</h3>
             {/* イベント説明文 */}
@@ -356,6 +389,120 @@ export function EventsPage({ language, events, attendingEvents, likedEvents, onT
                 >
                   {t.close}
                 </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* イベント詳細モーダル */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          {detailEvent && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-[#3D3D4E]">
+                  <Calendar className="w-5 h-5 text-[#49B1E4]" />
+                  {t.eventDetails}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                {/* イベント画像 */}
+                {detailEvent.image && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img 
+                      src={detailEvent.image} 
+                      alt={language === 'ja' ? detailEvent.title : (detailEvent.titleEn || detailEvent.title)}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* イベント名 */}
+                <h3 className="text-xl font-bold text-[#3D3D4E]">
+                  {language === 'ja' ? detailEvent.title : (detailEvent.titleEn || detailEvent.title)}
+                </h3>
+
+                {/* 基本情報 */}
+                <div className="bg-[#F5F1E8] rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-3 text-[#3D3D4E]">
+                    <Calendar className="w-5 h-5 text-[#49B1E4]" />
+                    <span>{detailEvent.date}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#3D3D4E]">
+                    <Clock className="w-5 h-5 text-[#49B1E4]" />
+                    <span>{detailEvent.time}</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-[#3D3D4E]">
+                    <MapPin className="w-5 h-5 text-[#49B1E4] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span>{language === 'ja' ? detailEvent.location : (detailEvent.locationEn || detailEvent.location)}</span>
+                      {detailEvent.googleMapUrl && (
+                        <a 
+                          href={detailEvent.googleMapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm text-[#49B1E4] hover:underline mt-1"
+                        >
+                          <ExternalLink className="w-3 h-3 inline mr-1" />
+                          {language === 'ja' ? 'Google Mapで開く' : 'Open in Google Maps'}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* いいね数と参加者数 */}
+                <div className="flex items-center gap-6">
+                  <button 
+                    onClick={() => onToggleLike(detailEvent.id)}
+                    className="flex items-center gap-2 text-pink-600 hover:text-pink-700 transition-colors"
+                  >
+                    <Heart className={`w-6 h-6 ${likedEvents.has(detailEvent.id) ? 'fill-current' : ''}`} />
+                    <span className="text-lg font-semibold">{detailEvent.likes}</span>
+                    <span className="text-sm">{t.likes}</span>
+                  </button>
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Users className="w-6 h-6" />
+                    <span className="text-lg font-semibold">{detailEvent.currentParticipants}/{detailEvent.maxParticipants}</span>
+                    <span className="text-sm">{t.participants}</span>
+                  </div>
+                </div>
+
+                {/* 説明文 */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-[#3D3D4E] mb-2">{t.description}</h4>
+                  <p className="text-[#6B6B7A] whitespace-pre-wrap leading-relaxed">
+                    {language === 'ja' 
+                      ? (detailEvent.descriptionJa || detailEvent.description || t.noDescription)
+                      : (detailEvent.descriptionEn || detailEvent.descriptionJa || detailEvent.description || t.noDescription)}
+                  </p>
+                </div>
+
+                {/* アクションボタン */}
+                <div className="flex gap-3 pt-4 border-t">
+                  {detailEvent.status === 'upcoming' && (
+                    <Button 
+                      className={`flex-1 ${attendingEvents.has(detailEvent.id) ? 'bg-gray-400' : 'bg-[#49B1E4] hover:bg-[#3A9FD3]'}`}
+                      onClick={() => handleAttendFromDetail(detailEvent)}
+                    >
+                      {attendingEvents.has(detailEvent.id) ? t.registered : t.attend}
+                    </Button>
+                  )}
+                  {detailEvent.status === 'past' && detailEvent.photos && (
+                    <Button variant="outline" className="flex-1">
+                      <Camera className="w-4 h-4 mr-2" />
+                      {t.viewPhotos} ({detailEvent.photos})
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCloseDetail}
+                  >
+                    {t.close}
+                  </Button>
+                </div>
               </div>
             </>
           )}
